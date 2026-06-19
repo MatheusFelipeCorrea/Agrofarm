@@ -3,6 +3,7 @@ import { authRoutes } from "./auth.routes.js";
 import { chatbotRoutes } from "./chatbot.routes.js";
 import { colheitaRoutes } from "./colheita.routes.js";
 import { cotacaoRoutes } from "./cotacao.routes.js";
+import { cronRoutes } from "./crons.routes.js";
 import { culturaRoutes } from "./cultura.routes.js";
 import { dashboardRoutes } from "./dashboard.routes.js";
 import { fazendaRoutes } from "./fazenda.routes.js";
@@ -28,6 +29,7 @@ router.get('/health', (_req, res) => {
 })
 
 router.use("/auth", authRoutes);
+router.use("/crons", cronRoutes);
 router.use("/chatbot", chatbotRoutes);
 router.use("/usuarios", usuarioRoutes);
 router.use("/dashboard", dashboardRoutes);

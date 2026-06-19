@@ -1,0 +1,8 @@
+api/node_modules
+web/node_modules
+api/.env
+web/.env
+api/.env.local
+web/.env.local
+docker-compose*.yml
+api/src/scripts

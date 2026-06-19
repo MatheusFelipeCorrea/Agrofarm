@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "framework": null,
+  "installCommand": "cd api && npm install && npx prisma generate",
+  "buildCommand": "cd web && npm install && npm run build",
+  "outputDirectory": "web/dist",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/crons/cotacao-update",
+      "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/crons/cotacao-cleanup",
+      "schedule": "0 3 * * 0"
+    },
+    {
+      "path": "/api/crons/arquivamento-mapa",
+      "schedule": "5 0 * * *"
+    },
+    {
+      "path": "/api/crons/lembretes",
+      "schedule": "* * * * *"
+    }
+  ]
+}
