@@ -1,0 +1,25 @@
+# Dependências
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+
+# Ambiente
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# IDEs
+.idea/
+.vscode/
+
+# SO
+.DS_Store
+*.local
+*.sw?

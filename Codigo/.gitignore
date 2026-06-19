@@ -1,0 +1,19 @@
+# Copilot / spec-kit
+.github/copilot/
+.speckit/.cache
+
+# Node (projetos em Agrofarm/api e Agrofarm/web)
+node_modules/
+
+# IDEs
+.idea/
+.vscode/
+
+# Ambiente
+.env
+.env.*
+!.env.example
+
+# SO
+.DS_Store
+*.sw?

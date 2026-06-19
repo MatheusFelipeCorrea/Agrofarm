@@ -1,0 +1,14 @@
+:root {
+  --agro-brand: #2e5b47;
+  --agro-brand-hover: #254a3a;
+  --agro-brand-muted: #3d6b56;
+  --agro-accent-lime: #9fe870;
+  --agro-surface: #f4f6f5;
+  --agro-page-bg: #f5f7f6;
+  --agro-card-border: rgba(15, 23, 42, 0.06);
+  --agro-form-teal: #1a3e3e;
+  --agro-danger: #d32f2f;
+  --agro-table-stripe: #f2f2f2;
+  --agro-badge-admin: #3f4186;
+  --agro-badge-func: #3371a0;
+}

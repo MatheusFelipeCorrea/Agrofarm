@@ -1,0 +1,399 @@
+.table-usuarios {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.table-usuarios thead th {
+  padding: 1.25rem 1.25rem;
+  vertical-align: middle;
+}
+
+.table-usuarios tbody td {
+  padding: 1.35rem 1.25rem;
+  vertical-align: middle;
+}
+
+@media (min-width: 640px) {
+  .table-usuarios thead th {
+    padding: 1.35rem 1.5rem;
+  }
+
+  .table-usuarios tbody td {
+    padding: 1.5rem 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .table-usuarios thead th {
+    padding: 1.5rem 1.75rem;
+  }
+
+  .table-usuarios tbody td {
+    padding: 1.65rem 1.75rem;
+  }
+
+  .table-usuarios thead th:first-child,
+  .table-usuarios tbody td:first-child {
+    padding-left: 2.25rem;
+  }
+
+  .table-usuarios thead th:last-child,
+  .table-usuarios tbody td:last-child {
+    padding-right: 2.25rem;
+  }
+}
+
+.table-usuarios.usuarios-tabela-titulos-sobre {
+  background-color: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.table-usuarios.usuarios-tabela-titulos-sobre thead th {
+  background-color: var(--agro-page-bg) !important;
+  border: 0 !important;
+  padding-top: 0.25rem !important;
+  padding-bottom: 0 !important;
+  vertical-align: middle;
+}
+
+.usuarios-tabela-card {
+  margin-top: -1rem !important;
+}
+
+@media (min-width: 640px) {
+  .usuarios-tabela-card {
+    margin-top: -1.15rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .usuarios-tabela-card {
+    margin-top: -1.25rem !important;
+  }
+}
+
+.usuario-form-modal .usuario-form-modal-input:-webkit-autofill,
+.usuario-form-modal .usuario-form-modal-input:-webkit-autofill:hover,
+.usuario-form-modal .usuario-form-modal-input:-webkit-autofill:focus,
+.usuario-form-modal .usuario-form-modal-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #eeeeee inset !important;
+  box-shadow: 0 0 0 1000px #eeeeee inset !important;
+  -webkit-text-fill-color: #111827 !important;
+  caret-color: #111827;
+  transition: background-color 99999s ease-out;
+}
+
+.agro-user-form-dialog__surface {
+  box-sizing: border-box;
+  width: min(100%, 46rem);
+  border-radius: 1rem;
+  border: 1px solid rgb(229 231 235 / 0.95);
+  background-color: #ffffff;
+  box-shadow: 0 22px 56px -22px rgb(0 0 0 / 0.24);
+  overflow-x: hidden;
+}
+
+.agro-user-form-dialog__body {
+  box-sizing: border-box;
+  padding: 1.15rem 1rem 1.25rem !important;
+}
+
+@media (min-width: 640px) {
+  .agro-user-form-dialog__body {
+    padding: 1.35rem 1.45rem 1.5rem !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .agro-user-form-dialog__body {
+    padding: 1.5rem 1.75rem 1.6rem !important;
+  }
+}
+
+.agro-user-form-dialog__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.agro-user-form-dialog__head-icon {
+  display: inline-flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: #eaf4ee;
+  color: #1f7a55;
+}
+
+.agro-user-form-dialog__close {
+  margin-left: auto;
+  display: inline-flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  color: #6b7280;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.agro-user-form-dialog__close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.agro-user-form-dialog__title {
+  margin: 0 !important;
+  font-weight: 700;
+  font-size: 1.55rem;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  color: #111827;
+}
+
+.agro-user-form-dialog__subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.86rem;
+  color: #6b7280;
+}
+
+.agro-user-form-dialog__rule {
+  margin: 0.95rem 0 0 !important;
+  height: 1px;
+  width: 100%;
+  border: 0;
+  background-color: rgb(229 231 235 / 1);
+}
+
+.agro-user-form-dialog__alert {
+  margin: 1rem 0 0 !important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 0.5rem;
+  background-color: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+
+.agro-user-form-dialog__grid {
+  margin-top: 1rem !important;
+  display: grid !important;
+  grid-template-columns: 1fr;
+  gap: 0.9rem 1rem !important;
+}
+
+@media (min-width: 768px) {
+  .agro-user-form-dialog__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.95rem 1.05rem !important;
+  }
+}
+
+.agro-user-form-dialog__label {
+  display: block !important;
+  margin: 0 0 0.4rem !important;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #1f2937;
+}
+
+.agro-user-form-dialog__field {
+  margin: 0 !important;
+  min-width: 0;
+}
+
+.agro-user-form-dialog__label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.agro-user-form-dialog__hint-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #eaf6ef;
+  color: #2c7b56;
+  font-size: 0.64rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+}
+
+.agro-user-form-dialog__helper {
+  margin: 0 0 0.5rem;
+  font-size: 0.74rem;
+  color: #6b7280;
+}
+
+.agro-user-form-dialog__input,
+.agro-user-form-dialog__select {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-height: 2.65rem !important;
+  margin: 0 !important;
+  padding: 0.52rem 0.85rem !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 0.5rem !important;
+  background-color: #ffffff !important;
+  font-size: 0.845rem !important;
+  color: #111827 !important;
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.agro-user-form-dialog__input::placeholder,
+.agro-user-form-dialog__select::placeholder {
+  color: #9ca3af !important;
+}
+
+.agro-user-form-dialog__input:focus,
+.agro-user-form-dialog__select:focus {
+  border-color: #7ea995 !important;
+  box-shadow: 0 0 0 3px rgb(16 124 87 / 0.12) !important;
+}
+
+.agro-user-form-dialog__select {
+  padding-right: 2.4rem !important;
+  cursor: pointer;
+  appearance: none;
+}
+
+.agro-user-form-dialog__select--muted {
+  color: #6b7280 !important;
+}
+
+.agro-user-form-dialog__eye {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agro-user-form-dialog__footer {
+  margin: 1.1rem -1rem -1.25rem !important;
+  padding: 0.95rem 1rem !important;
+  border-top: 1px solid #e5e7eb !important;
+  display: flex !important;
+  flex-direction: column-reverse;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 0.75rem !important;
+  background: #fafafa;
+}
+
+@media (min-width: 640px) {
+  .agro-user-form-dialog__footer {
+    flex-direction: row;
+    align-items: center;
+    padding: 1rem 1.25rem !important;
+    margin: 1.2rem -1.45rem -1.5rem !important;
+  }
+}
+
+.agro-user-form-dialog__footer button {
+  box-sizing: border-box !important;
+  min-height: 2.6rem !important;
+  min-width: 8.75rem;
+  padding: 0.72rem 1.5rem !important;
+}
+
+.agro-delete-user-dialog__surface {
+  box-sizing: border-box;
+  width: min(100%, 25.5rem);
+  border-radius: 0.95rem;
+  border: 1px solid rgb(229 231 235 / 1);
+  background-color: #ffffff;
+  box-shadow: 0 20px 48px -22px rgb(0 0 0 / 0.28);
+  overflow: hidden;
+}
+
+.agro-delete-user-dialog__body {
+  box-sizing: border-box;
+  padding: 1rem !important;
+}
+
+.agro-delete-user-dialog__header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1rem 1rem 0.85rem;
+  border-bottom: 1px solid #eceff1;
+}
+
+.agro-delete-user-dialog__icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: #fdecec;
+}
+
+.agro-delete-user-dialog__headline {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #111827;
+}
+
+.agro-delete-user-dialog__close {
+  margin-left: auto;
+  display: inline-flex;
+  width: 1.8rem;
+  height: 1.8rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.45rem;
+  color: #6b7280;
+}
+
+.agro-delete-user-dialog__close:hover {
+  background: #f3f4f6;
+}
+
+.agro-delete-user-dialog__content {
+  padding: 1rem 1rem 0.7rem;
+}
+
+.agro-delete-user-dialog__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.agro-delete-user-dialog__description {
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #6b7280;
+}
+
+.agro-delete-user-dialog__divider {
+  margin: 0 !important;
+  height: 1px;
+  width: 100%;
+  background-color: #eceff1;
+  border: 0;
+}
+
+.agro-delete-user-dialog__actions {
+  margin-top: 0 !important;
+  padding: 0.7rem 1rem 1rem !important;
+  display: flex !important;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.65rem !important;
+}

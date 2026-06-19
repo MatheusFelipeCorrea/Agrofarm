@@ -1,0 +1,31 @@
+cff-version: 1.0.1
+message: Please cite this software using these metadata.
+title: Agrofarm
+- family-names: Salomão
+    given-names: Alice Shikida
+  - family-names: Cunha
+    given-names: Fernanda Soares Oliveira
+  - family-names: Silva
+    given-names: Gabriel Lacerda Lemos da
+  - family-names: Fiorini
+    given-names: Júlia Rocha
+  - family-names: Mendes
+    given-names: Matheus Dias
+  - family-names: Silva
+    given-names: Matheus Felipe Correa da
+  - name-suffix: Professor
+    affiliation: PUC Minas
+    family-names: Cardoso
+    given-names: Leonardo Vilela
+  - name-suffix: Professor
+    affiliation: PUC Minas
+    family-names: Nhimi
+    given-names: Filipe Torio Lopes Ruas
+keywords:
+  - AgroTecnologia
+  - Desenvolvimento
+  - AgroExportação
+repository-code: 
+license: CC-BY-4.0
+version: 1.0.0
+date-released: 2022-07-14

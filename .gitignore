@@ -1,0 +1,25 @@
+# Pacote Node órfão na raiz (deps ficam em Codigo/Agrofarm/web e api)
+/node_modules/
+/package.json
+/package-lock.json
+
+# IDEs (config local de cada desenvolvedor)
+.idea/
+.vscode/
+*.iml
+
+# Ambiente
+.env
+.env.*
+!.env.example
+
+# Build / cache
+dist/
+coverage/
+.speckit/.cache
+
+# SO / logs
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*

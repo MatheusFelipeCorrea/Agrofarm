@@ -1,0 +1,416 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model colheitas {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fazenda_id       String   @db.Uuid
+  cultura_id       String   @db.Uuid
+  area             Decimal  @db.Decimal(10, 2)
+  sacas_produzidas Decimal  @db.Decimal(10, 2)
+  ano              Int
+  data_colheita    DateTime @db.Date
+  criado_em        DateTime @default(now()) @db.Timestamp(6)
+  atualizado_em    DateTime @default(now()) @db.Timestamp(6)
+  culturas         culturas @relation(fields: [cultura_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fazendas         fazendas @relation(fields: [fazenda_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  gastos           gastos[]
+  lucros                  lucros[]
+  lembretes               lembretes[]
+  poligonos_historico     poligonos_fazenda_historico[]
+
+  @@index([data_colheita], map: "idx_colheitas_data_colheita")
+  @@index([fazenda_id, cultura_id], map: "idx_colheitas_fazenda_cultura")
+  @@index([fazenda_id, cultura_id, data_colheita], map: "idx_colheitas_fazenda_cultura_data")
+}
+
+model cotacoes {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  valor         Decimal  @db.Decimal(10, 4)
+  fonte         String   @db.VarChar(100)
+  atualizado_em DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([atualizado_em(sort: Desc)], map: "idx_cotacoes_atualizado_em")
+}
+
+model culturas {
+  id               String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome             String               @unique @db.VarChar(100)
+  cor              String               @db.VarChar(7)
+  criado_em        DateTime             @default(now()) @db.Timestamp(6)
+  hectares         Decimal              @default(0) @db.Decimal(10, 2)
+  colheitas               colheitas[]
+  fazenda_culturas        fazenda_culturas[]
+  poligonos               poligonos_fazenda[]
+  poligonos_historico     poligonos_fazenda_historico[]
+  simulacoes              simulacoes[]
+}
+
+model fazendas {
+  id                         String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome                       String                        @db.VarChar(150)
+  tipo                       tipo_fazenda
+  localizacao                String?                       @db.VarChar(255)
+  latitude                   Decimal?                      @db.Decimal(10, 7)
+  longitude                  Decimal?                      @db.Decimal(10, 7)
+  ativa                      Boolean                       @default(true)
+  arrendamento_valor         Decimal?                      @db.Decimal(12, 2)
+  arrendamento_periodicidade periodicidade_arrendamento?
+  arrendamento_data_inicio   DateTime?                     @db.Date
+  criado_em                  DateTime                      @default(now()) @db.Timestamp(6)
+  atualizado_em              DateTime                      @default(now()) @db.Timestamp(6)
+  colheitas                  colheitas[]
+  fazenda_culturas           fazenda_culturas[]
+  insight_snapshots          insight_snapshots[]
+  insumos_atividades         insumos_atividades[]
+  lembretes                  lembretes[]
+  usuarios_fazendas          usuarios_fazendas[]
+  poligonos                  poligonos_fazenda[]
+  poligonos_historico        poligonos_fazenda_historico[]
+  simulacoes                 simulacoes[]
+  lucros_arrendamento        lucros[]                      @relation("LucrosArrendamentoFazenda")
+}
+
+model gastos {
+  id                 String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  colheita_id        String       @db.Uuid
+  tipo               String       @db.VarChar(50)
+  tipo_personalizado String?      @db.VarChar(100)
+  valor              Decimal      @db.Decimal(10, 2)
+  data_vencimento    DateTime?    @db.Date
+  status             status_gasto
+  descricao          String?
+  data               DateTime     @db.Date
+  criado_em          DateTime     @default(now()) @db.Timestamp(6)
+  atualizado_em      DateTime     @default(now()) @db.Timestamp(6)
+  colheitas          colheitas    @relation(fields: [colheita_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([colheita_id], map: "idx_gastos_colheita_id")
+  @@index([data], map: "idx_gastos_data")
+  @@index([data_vencimento], map: "idx_gastos_data_vencimento")
+  @@index([status], map: "idx_gastos_status")
+  @@index([colheita_id, data], map: "idx_gastos_colheita_data")
+  @@index([colheita_id, status], map: "idx_gastos_colheita_status")
+  @@index([status, data], map: "idx_gastos_status_data")
+}
+
+model insumos_atividades {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  funcionario_id String   @db.Uuid
+  fazenda_id     String   @db.Uuid
+  item           String   @db.VarChar(150)
+  categoria      String   @default("OUTRO") @db.VarChar(50)
+  quantidade     Decimal  @db.Decimal(10, 2)
+  unidade        String   @default("kg") @db.VarChar(20)
+  valor_unitario Decimal  @default(0) @db.Decimal(10, 2)
+  fornecedor     String?  @db.VarChar(200)
+  observacoes    String?
+  data           DateTime @db.Date
+  criado_em      DateTime @default(now()) @db.Timestamp(6)
+  fazendas       fazendas @relation(fields: [fazenda_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios       usuarios @relation(fields: [funcionario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([fazenda_id, data], map: "idx_insumos_fazenda_data")
+}
+
+model lembretes {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuario_id        String          @db.Uuid
+  fazenda_id        String?         @db.Uuid
+  colheita_id       String?         @db.Uuid
+  poligono_id       String?         @db.Uuid
+  titulo            String          @db.VarChar(150)
+  descricao         String?
+  data_lembrete     DateTime        @db.Timestamp(6)
+  telefone_whatsapp String?         @db.VarChar(20)
+  status            status_lembrete @default(PENDENTE)
+  recorrencia       recorrencia_lembrete @default(NENHUMA)
+  recorrencia_custom String?        @db.VarChar(120)
+  criado_em         DateTime        @default(now()) @db.Timestamp(6)
+  enviado_em        DateTime?       @db.Timestamp(6)
+  erro_envio        String?
+  fazendas          fazendas?       @relation(fields: [fazenda_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  colheitas         colheitas?      @relation(fields: [colheita_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  poligonos_fazenda poligonos_fazenda? @relation(fields: [poligono_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  usuarios          usuarios        @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([data_lembrete], map: "idx_lembretes_data_lembrete")
+  @@index([fazenda_id, data_lembrete], map: "idx_lembretes_fazenda_data")
+  @@index([colheita_id], map: "idx_lembretes_colheita_id")
+  @@index([poligono_id], map: "idx_lembretes_poligono_id")
+  @@index([status], map: "idx_lembretes_status")
+  @@index([usuario_id, data_lembrete], map: "idx_lembretes_usuario_data")
+}
+
+model lucros {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  colheita_id      String?       @db.Uuid
+  fazenda_id       String?       @db.Uuid
+  origem              origem_lucro                    @default(VENDA_COLHEITA)
+  status_recebimento  status_recebimento_arrendamento?
+  quantidade_sacas    Decimal                         @db.Decimal(10, 2)
+  valor_unitario   Decimal       @db.Decimal(10, 2)
+  comprador        String        @db.VarChar(150)
+  data             DateTime      @db.Date
+  criado_em        DateTime      @default(now()) @db.Timestamp(6)
+  colheitas        colheitas?    @relation(fields: [colheita_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fazendas         fazendas?     @relation("LucrosArrendamentoFazenda", fields: [fazenda_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([colheita_id, data], map: "idx_lucros_colheita_data")
+  @@index([data], map: "idx_lucros_data")
+  @@index([fazenda_id, data], map: "idx_lucros_fazenda_data")
+  @@index([origem], map: "idx_lucros_origem")
+}
+
+model usuarios {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome               String               @db.VarChar(100)
+  email              String               @unique @db.VarChar(255)
+  senha              String               @db.VarChar(255)
+  role               role                 @default(FUNCIONARIO)
+  telefone           String?              @db.VarChar(20)
+  criado_em          DateTime             @default(now()) @db.Timestamp(6)
+  token_reset            String?              @db.VarChar(255)
+  token_reset_expira     DateTime?            @db.Timestamp(6)
+  must_change_password   Boolean              @default(false)
+  chat_sessoes       chat_sessoes[]
+  insight_snapshots  insight_snapshots[]
+  insumos_atividades insumos_atividades[]
+  lembretes          lembretes[]
+  notificacoes       notificacoes[]
+  usuarios_fazendas  usuarios_fazendas[]
+  poligonos_criados  poligonos_fazenda[]
+  simulacoes         simulacoes[]
+}
+
+model notificacoes {
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuario_id    String           @db.Uuid
+  tipo          tipo_notificacao
+  titulo        String           @db.VarChar(150)
+  descricao     String?
+  rota          String?          @db.VarChar(255)
+  referencia_id String?          @db.Uuid
+  lida_em       DateTime?        @db.Timestamp(6)
+  criado_em     DateTime         @default(now()) @db.Timestamp(6)
+  atualizado_em DateTime         @default(now()) @db.Timestamp(6)
+  usuarios      usuarios         @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+
+  @@unique([usuario_id, tipo, referencia_id], map: "notificacoes_usuario_tipo_referencia_unique")
+  @@index([usuario_id], map: "idx_notificacoes_usuario_id")
+  @@index([usuario_id, criado_em(sort: Desc)], map: "idx_notificacoes_usuario_criado_em")
+  @@index([lida_em], map: "idx_notificacoes_lida_em")
+}
+
+model fazenda_culturas {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fazenda_id   String         @db.Uuid
+  cultura_id   String         @db.Uuid
+  hectares     Decimal        @db.Decimal(10, 2)
+  status       status_cultura
+  criado_em    DateTime       @default(now()) @db.Timestamp(6)
+  deletado_em  DateTime?      @db.Timestamp(6)
+  deletado_por String?        @db.Uuid
+  culturas     culturas       @relation(fields: [cultura_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fazendas     fazendas       @relation(fields: [fazenda_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([fazenda_id, cultura_id])
+}
+
+model usuarios_fazendas {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuario_id String   @db.Uuid
+  fazenda_id String   @db.Uuid
+  criado_em  DateTime @default(now()) @db.Timestamp(6)
+  fazendas   fazendas @relation(fields: [fazenda_id], references: [id], onDelete: Cascade)
+  usuarios   usuarios @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+
+  @@unique([usuario_id, fazenda_id], map: "usuarios_fazendas_unique")
+  @@index([fazenda_id], map: "idx_usuarios_fazendas_fazenda_id")
+  @@index([usuario_id], map: "idx_usuarios_fazendas_usuario_id")
+}
+
+model chat_mensagens {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessao_id    String       @db.Uuid
+  papel        String       @db.VarChar(20)
+  conteudo     String
+  metadados    Json?
+  criado_em    DateTime     @default(now()) @db.Timestamp(6)
+  chat_sessoes chat_sessoes @relation(fields: [sessao_id], references: [id], onDelete: Cascade)
+
+  @@index([criado_em(sort: Desc)], map: "idx_chat_mensagens_criado_em")
+  @@index([sessao_id], map: "idx_chat_mensagens_sessao_id")
+}
+
+model chat_sessoes {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuario_id     String           @db.Uuid
+  titulo         String?          @db.VarChar(150)
+  criado_em      DateTime         @default(now()) @db.Timestamp(6)
+  atualizado_em  DateTime         @default(now()) @db.Timestamp(6)
+  chat_mensagens chat_mensagens[]
+  usuarios       usuarios         @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+
+  @@index([usuario_id], map: "idx_chat_sessoes_usuario_id")
+}
+
+model insight_snapshots {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tipo       String    @db.VarChar(50)
+  fazenda_id String?   @db.Uuid
+  escopo     String    @db.VarChar(20)
+  conteudo   Json
+  gerado_por String    @db.Uuid
+  gerado_em  DateTime  @default(now()) @db.Timestamp(6)
+  fazendas   fazendas? @relation(fields: [fazenda_id], references: [id])
+  usuarios   usuarios  @relation(fields: [gerado_por], references: [id], onDelete: Cascade)
+
+  @@index([fazenda_id], map: "idx_insight_snapshots_fazenda_id")
+  @@index([gerado_em(sort: Desc)], map: "idx_insight_snapshots_gerado_em")
+  @@index([tipo], map: "idx_insight_snapshots_tipo")
+}
+
+enum role {
+  ADMIN
+  FUNCIONARIO
+}
+
+enum status_gasto {
+  PAGO
+  PENDENTE
+}
+
+enum status_lembrete {
+  PENDENTE
+  ENVIADO
+  CANCELADO
+}
+
+enum tipo_fazenda {
+  PROPRIA
+  ARRENDADA_DE_TERCEIROS
+  ARRENDADA_PARA_TERCEIROS
+}
+
+enum periodicidade_arrendamento {
+  MENSAL
+  SEMESTRAL
+  ANUAL
+}
+
+enum origem_lucro {
+  VENDA_COLHEITA
+  ARRENDAMENTO
+}
+
+enum status_recebimento_arrendamento {
+  PENDENTE
+  RECEBIDO
+  NAO_RECEBIDO
+}
+
+enum status_cultura {
+  SECAGEM
+  COLHEITA
+  PLANTIO
+  ADUBACAO
+  PULVERIZACAO
+}
+
+enum recorrencia_lembrete {
+  NENHUMA
+  SEMANAL
+  MENSAL
+  TRIMESTRAL
+  ANUAL
+  OUTROS
+}
+
+enum tipo_notificacao {
+  LEMBRETE
+  INSUMO_NOVO
+  ARRENDAMENTO_RECEBER
+  GASTO_ATRASADO
+}
+
+model poligonos_fazenda {
+  id            String                                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fazenda_id    String                                    @db.Uuid
+  cultura_id    String?                                   @db.Uuid
+  nome          String                                    @db.VarChar(100)
+  geometria     Unsupported("geometry(Polygon, 4326)")
+  area_hectares Decimal                                   @db.Decimal(10, 2)
+  data_plantio  DateTime?                                 @db.Date
+  data_colheita DateTime?                                 @db.Date
+  criado_em     DateTime                                  @default(now()) @db.Timestamp(6)
+  atualizado_em DateTime                                  @default(now()) @db.Timestamp(6)
+  criado_por    String?                                   @db.Uuid
+  fazendas      fazendas                                  @relation(fields: [fazenda_id], references: [id], onDelete: Cascade)
+  culturas      culturas?                                 @relation(fields: [cultura_id], references: [id], onDelete: SetNull)
+  usuarios      usuarios?                                 @relation(fields: [criado_por], references: [id], onDelete: SetNull)
+  lembretes     lembretes[]
+
+  @@index([fazenda_id])
+  @@index([cultura_id])
+  @@index([criado_em(sort: Desc)])
+  @@index([data_colheita])
+}
+
+enum status_historico_mapa {
+  COLHIDA
+  ENCERRADA
+  ARQUIVADA
+}
+
+model poligonos_fazenda_historico {
+  id                 String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fazenda_id         String                @db.Uuid
+  poligono_id_origem String?               @db.Uuid
+  nome               String                @db.VarChar(100)
+  cultura_id         String?               @db.Uuid
+  colheita_id        String?               @db.Uuid
+  data_plantio       DateTime?             @db.Date
+  data_colheita      DateTime?             @db.Date
+  area_hectares      Decimal               @db.Decimal(10, 2)
+  geometria          Unsupported("geometry(Polygon, 4326)")
+  status             status_historico_mapa @default(ARQUIVADA)
+  arquivado_em       DateTime              @default(now()) @db.Timestamp(6)
+  restaurado_em      DateTime?             @db.Timestamp(6)
+  fazendas           fazendas              @relation(fields: [fazenda_id], references: [id], onDelete: Cascade)
+  culturas           culturas?             @relation(fields: [cultura_id], references: [id], onDelete: SetNull)
+  colheitas          colheitas?            @relation(fields: [colheita_id], references: [id], onDelete: SetNull)
+
+  @@index([fazenda_id, arquivado_em(sort: Desc)], map: "idx_pol_hist_fazenda_arquivado")
+  @@index([fazenda_id, status], map: "idx_pol_hist_fazenda_status")
+}
+
+model simulacoes {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  usuario_id            String    @db.Uuid
+  fazenda_id            String?   @db.Uuid
+  cultura_id            String    @db.Uuid
+  quantidade_sacas      Decimal   @db.Decimal(10, 2)
+  valor_saca            Decimal   @db.Decimal(10, 2)
+  moeda                 String    @db.VarChar(3)
+  taxa_cambio_manual    Decimal?  @db.Decimal(10, 4)
+  valor_bruto           Decimal   @db.Decimal(12, 2)
+  valor_liquido         Decimal   @db.Decimal(12, 2)
+  composicao_taxas      Json
+  abatimento_divida     Decimal   @db.Decimal(12, 2)
+  novo_saldo_divida     Decimal   @db.Decimal(12, 2)
+  criado_em             DateTime  @default(now()) @db.Timestamp(6)
+  culturas              culturas  @relation(fields: [cultura_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fazendas              fazendas? @relation(fields: [fazenda_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios              usuarios  @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+
+  @@index([usuario_id, criado_em(sort: Desc)], map: "idx_simulacoes_usuario_criado_em")
+  @@index([fazenda_id], map: "idx_simulacoes_fazenda_id")
+  @@index([cultura_id], map: "idx_simulacoes_cultura_id")
+}
