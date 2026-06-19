@@ -16,7 +16,7 @@
   "crons": [
     {
       "path": "/api/crons/cotacao-update",
-      "schedule": "0 */2 * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/crons/cotacao-cleanup",
@@ -28,7 +28,7 @@
     },
     {
       "path": "/api/crons/lembretes",
-      "schedule": "* * * * *"
+      "schedule": "0 7 * * *"
     }
   ]
 }
