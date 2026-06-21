@@ -18,6 +18,7 @@ const schema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_API_KEY_CHATBOT: z.string().optional(),
   GEMINI_API_KEY_INSIGHTS: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
   COTACAO_CLEANUP_CRON: z.string().default("0 3 * * 0"),
   COTACAO_CLEANUP_TIMEZONE: z.string().default("America/Sao_Paulo"),
   COTACAO_UPDATE_CRON: z.string().default("0 */2 * * *"),
