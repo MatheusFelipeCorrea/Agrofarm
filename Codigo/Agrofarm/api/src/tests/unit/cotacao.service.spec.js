@@ -113,3 +113,118 @@ describe("cotacaoView", () => {
     });
   });
 });
+
+describe("cotacaoService.buscarEuro", () => {
+  it("retorna cotação do euro via API externa", async () => {
+    axios.get.mockResolvedValue({
+      data: {
+        EURBRL: {
+          bid: "6.1234",
+          pctChange: "-0.2",
+          create_date: "2026-05-05 10:00:00",
+        },
+      },
+    });
+
+    const resultado = await cotacaoService.buscarEuro();
+
+    expect(resultado.valor).toBe(6.1234);
+    expect(resultado.fonte).toBe("awesomeapi");
+    expect(prisma.cotacoes.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ fonte: "awesomeapi:EUR" }),
+      }),
+    );
+  });
+});
+
+describe("cotacaoService.buscarCommodities", () => {
+  it("mapeia culturas cadastradas e busca cotações no Yahoo", async () => {
+    prisma.culturas.findMany.mockResolvedValue([{ nome: "Soja" }, { nome: "Milho" }]);
+    axios.get.mockImplementation((url) => {
+      if (String(url).includes("yahoo")) {
+        return Promise.resolve({
+          data: {
+            chart: {
+              result: [
+                {
+                  meta: { regularMarketTime: 1715000000 },
+                  indicators: { quote: [{ close: [null, 1200, 1250] }] },
+                },
+              ],
+            },
+          },
+        });
+      }
+      return Promise.reject(new Error("unexpected"));
+    });
+
+    const commodities = await cotacaoService.buscarCommodities();
+
+    expect(commodities.length).toBeGreaterThanOrEqual(2);
+    const soja = commodities.find((c) => c.id === "soja");
+    expect(soja?.valor).toBe(12.5);
+    expect(soja?.fonte).toBe("yahoo-finance");
+  });
+
+  it("usa commodities padrão quando não há culturas cadastradas", async () => {
+    prisma.culturas.findMany.mockResolvedValue([]);
+    axios.get.mockResolvedValue({
+      data: {
+        chart: {
+          result: [
+            {
+              meta: { regularMarketTime: 1715000000 },
+              indicators: { quote: [{ close: [1100] }] },
+            },
+          ],
+        },
+      },
+    });
+
+    const commodities = await cotacaoService.buscarCommodities();
+    const ids = commodities.map((c) => c.id);
+
+    expect(ids).toEqual(expect.arrayContaining(["soja", "milho", "cafe"]));
+  });
+});
+
+describe("cotacaoService.buscarPainelMercado", () => {
+  it("agrega dólar, euro e commodities", async () => {
+    axios.get.mockImplementation((url) => {
+      const u = String(url);
+      if (u.includes("USD-BRL")) {
+        return Promise.resolve({
+          data: { USDBRL: { bid: "5.50", pctChange: "0.1", create_date: "2026-05-05 10:00:00" } },
+        });
+      }
+      if (u.includes("EUR-BRL")) {
+        return Promise.resolve({
+          data: { EURBRL: { bid: "6.00", pctChange: "0", create_date: "2026-05-05 10:00:00" } },
+        });
+      }
+      if (u.includes("yahoo")) {
+        return Promise.resolve({
+          data: {
+            chart: {
+              result: [
+                {
+                  meta: { regularMarketTime: 1715000000 },
+                  indicators: { quote: [{ close: [1000] }] },
+                },
+              ],
+            },
+          },
+        });
+      }
+      return Promise.reject(new Error("offline"));
+    });
+    prisma.culturas.findMany.mockResolvedValue([{ nome: "Soja" }]);
+
+    const painel = await cotacaoService.buscarPainelMercado();
+
+    expect(painel.dolar.valor).toBe(5.5);
+    expect(painel.euro.valor).toBe(6);
+    expect(painel.commodities.length).toBeGreaterThan(0);
+  });
+});
