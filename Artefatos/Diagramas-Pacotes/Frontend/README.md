@@ -28,7 +28,7 @@ Diagramas UML de pacotes da arquitetura frontend do Agrofarm (`web/src`).
 | `store` | Estado global (Zustand) |
 | `hooks` | Hooks compartilhados |
 | `utils` | Formatadores, validadores, helpers |
-| `lib` | Query client, notificações, clima |
+| `lib` | Query client, notificações, clima (Open-Meteo) |
 
 ---
 

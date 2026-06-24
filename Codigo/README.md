@@ -25,8 +25,8 @@ Este diretório concentra todo o código executável do projeto. A aplicação �
 ### 1. Clonar e entrar no repositório
 
 ```bash
-git clone https://github.com/ICEI-PUC-Minas-PMGES-TI/pmg-es-2026-1-ti4-3170100-agrofarm.git
-cd pmg-es-2026-1-ti4-3170100-agrofarm/Codigo
+git clone https://github.com/MatheusFelipeCorrea/Agrofarm.git
+cd Agrofarm/Codigo
 ```
 
 ### 2. Backend (`Agrofarm/api`)
@@ -70,6 +70,9 @@ Interface em **http://localhost:5173**
 | `CORS_ORIGIN` | Sim | Origens permitidas (ex.: `http://localhost:5173`) |
 | `GEMINI_API_KEY_CHATBOT` | Sim* | Chave Gemini para o chat IA |
 | `GEMINI_API_KEY_INSIGHTS` | Sim* | Chave Gemini para insights |
+| `RESEND_API_KEY` | Sim* | E-mail de recuperação de senha |
+| `RESEND_FROM` | Não | Remetente verificado no Resend |
+| `WEB_APP_URL` | Não | URL do front para links em e-mail |
 | `EVOLUTION_API_URL` | Não | URL da Evolution API (WhatsApp) |
 | `EVOLUTION_API_KEY` | Não | Chave de autenticação Evolution |
 | `EVOLUTION_INSTANCE` | Não | Nome da instância WhatsApp |
@@ -98,6 +101,9 @@ VITE_API_URL=http://localhost:3333/api
 | `npm run test:coverage` | Cobertura de testes |
 | `npm run lint` | ESLint |
 | `npm run db:generate` | Gera Prisma Client após mudanças no schema |
+| `npm run db:push` | Aplica schema ao banco (`prisma db push`) |
+| `npm run db:up` / `db:down` | Sobe/para Postgres local (Docker) |
+| `npm run db:setup` | Setup completo local (Docker + push + seed) |
 | `npm run db:pull` | Sincroniza schema a partir do banco |
 | `npm run db:studio` | Interface visual Prisma Studio |
 | `npm run db:seed` | Usuário administrador inicial |
@@ -105,6 +111,8 @@ VITE_API_URL=http://localhost:3333/api
 | `npm run db:verify` | Verifica conectividade e integridade |
 | `npm run evolution:status` | Status da instância WhatsApp |
 | `npm run evolution:provisionar -- <numero>` | Provisiona instância + QR Code |
+| `npm run evolution:conectar` | Reconecta instância WhatsApp |
+| `npm run test:gemini-key` | Testa chaves Gemini configuradas |
 | `npm run cotacao:cleanup` | Limpeza manual do histórico de cotações |
 
 ---
@@ -115,6 +123,7 @@ VITE_API_URL=http://localhost:3333/api
 | ------ | --------- |
 | `npm run dev` | Vite dev server com HMR |
 | `npm run build` | Build de produção em `dist/` |
+| `npm run vercel-build` | Build usado no deploy Vercel |
 | `npm run preview` | Preview do build local |
 | `npm test` | Testes (Vitest) |
 | `npm run test:coverage` | Cobertura |
@@ -137,7 +146,7 @@ Endpoints relevantes:
 - `POST /api/lembretes/whatsapp/provisionar` — cria instância e retorna QR
 - `POST /api/lembretes/:id/enviar` — envio manual
 
-Job agendado em `src/jobs/lembretes.job.js` processa lembretes pendentes automaticamente.
+Job agendado em `src/jobs/lembretes.job.js` (local) e via `/api/crons/lembretes` na Vercel.
 
 ---
 
@@ -170,3 +179,13 @@ Implementar service → queries → página (web)
         ▼
 npm test (api + web)
 ```
+
+---
+
+## Hospedagem (Vercel)
+
+- **Produção:** https://agrofarm-fawn.vercel.app
+- **Raiz do deploy:** `Codigo/Agrofarm` (`vercel.json` na pasta)
+- **API:** serverless em `api/index.js` · **Web:** build Vite em `web/dist`
+- **Crons:** lembretes, cotações e arquivamento de mapa via rotas `/api/crons/*`
+- Variáveis de ambiente configuradas no painel Vercel (mesmas da API + `VITE_API_URL` para o front)

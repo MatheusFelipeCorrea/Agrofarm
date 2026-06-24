@@ -35,6 +35,7 @@ npm run dev
 | ------ | --------- |
 | `npm run dev` | Servidor de desenvolvimento com HMR |
 | `npm run build` | Build de produção em `dist/` |
+| `npm run vercel-build` | Build usado no deploy Vercel |
 | `npm run preview` | Preview do build local |
 | `npm test` | Testes (Vitest) |
 | `npm run test:coverage` | Cobertura de testes |
@@ -52,26 +53,31 @@ VITE_API_URL=http://localhost:3333/api
 
 ## Telas principais
 
-| Rota | Página | Acesso |
-| ---- | ------ | ------ |
+O acesso efetivo é controlado pelo **menu retornado no login** (`buildMenuForRole` + `routeAccess.js`). A tabela abaixo resume as rotas; guards extras aplicam `AdminRoute` onde indicado.
+
+| Rota | Página | Guard |
+| ---- | ------ | ----- |
 | `/login` | Login | Público |
-| `/recuperar-senha` | Recuperação de senha | Público |
-| `/redefinir-senha` | Redefinição com token | Público |
+| `/recuperar-senha` | Recuperação de senha | AuthPageRoute |
+| `/redefinir-senha` | Redefinição com token | AuthPageRoute |
 | `/trocar-senha-inicial` | Troca obrigatória no primeiro acesso | Público |
-| `/` | Dashboard | Autenticado (ADMIN) |
-| `/fazendas` | Lista de fazendas | Autenticado (ADMIN) |
-| `/fazendas/:id` | Detalhe (visão geral, culturas, mapa, histórico) | Autenticado (ADMIN) |
-| `/colheitas` | Colheitas | Autenticado (ADMIN) |
-| `/gastos` | Gastos | Autenticado (ADMIN) |
-| `/lucros` | Lucros | Autenticado (ADMIN) |
-| `/estoque` | Estoque | Autenticado (ADMIN) |
-| `/insumos` | Insumos | Autenticado (ADMIN / FUNCIONARIO) |
-| `/lembretes` | Lembretes e calendário | Autenticado (ADMIN) |
-| `/simulacao` | Simulação de dívidas | ADMIN |
-| `/insights` | Insights inteligentes | ADMIN |
-| `/chatbot` | Chat IA | Autenticado (ADMIN) |
-| `/noticias` | Notícias e clima | Autenticado (ADMIN) |
-| `/usuarios` | Gestão de usuários | ADMIN |
+| `/alterar-senha` | Alterar senha (logado) | PrivateRoute |
+| `/` | Dashboard | PrivateRoute (menu ADMIN) |
+| `/fazendas` | Lista de fazendas | PrivateRoute |
+| `/fazendas/:id` | Detalhe (visão geral, culturas, mapa, histórico) | PrivateRoute |
+| `/colheitas` | Colheitas | PrivateRoute |
+| `/gastos` | Gastos | PrivateRoute |
+| `/lucros` | Lucros | PrivateRoute |
+| `/estoque` | Estoque | PrivateRoute |
+| `/insumos` | Insumos | PrivateRoute (ADMIN e FUNCIONARIO) |
+| `/lembretes` | Lembretes e calendário | PrivateRoute |
+| `/simulacao` | Simulação de dívidas | AdminRoute |
+| `/insights` | Insights inteligentes | AdminRoute |
+| `/chatbot` | Chat IA | PrivateRoute |
+| `/noticias` | Notícias e clima | PrivateRoute |
+| `/usuarios` | Gestão de usuários | AdminRoute |
+
+Redirect legado: `/insights-inteligentes` → `/insights`.
 
 O menu lateral é montado dinamicamente a partir do campo `menu` retornado no login (`buildMenuForRole` no backend).
 

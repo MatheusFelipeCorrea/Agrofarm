@@ -24,9 +24,10 @@ O AgroFarm é um sistema desenvolvido com o objetivo de auxiliar o produtor rura
 | ---- | ------- |
 | **Arquitetura** | Frontend **React 19 + Vite 6** · Backend **Node.js + Express** · **PostgreSQL** via **Prisma 5** |
 | **Autenticação** | JWT · papéis **ADMIN** e **FUNCIONARIO** · menu dinâmico por perfil |
-| **Integrações** | Google Gemini (chat e insights) · Evolution API (WhatsApp) · cotações USD/EUR · IBPT (simulação fiscal) |
+| **Integrações** | Google Gemini (chat e insights) · Evolution API (WhatsApp) · cotações USD/EUR · IBPT (simulação fiscal) · Resend (e-mail) |
 | **Mapas** | MapLibre GL + talhões georreferenciados (PostGIS) por fazenda |
 | **Código-fonte** | `Codigo/Agrofarm/api` (backend) · `Codigo/Agrofarm/web` (frontend) |
+| **Hospedagem** | [agrofarm-fawn.vercel.app](https://agrofarm-fawn.vercel.app) (Vercel) |
 
 ---
 
@@ -70,7 +71,9 @@ pmg-es-2026-1-ti4-3170100-agrofarm/
 │           └── Documents/Readme.md  ← documentação técnica do web
 ├── Documentacao/                    ← documentos acadêmicos do projeto
 ├── Artefatos/                       ← diagramas, atas, DER, casos de uso
-└── Divulgacao/                      ← apresentação e vídeo
+├── Divulgacao/                      ← apresentação e vídeo (cópias de divulgação)
+├── Apresentacao/                    ← slides (atalho local)
+└── Video/                           ← vídeo do projeto (atalho local)
 ```
 
 ---
@@ -150,4 +153,4 @@ cd Codigo/Agrofarm/api && npm test
 cd Codigo/Agrofarm/web && npm test
 ```
 
-Ambos os projetos usam **Vitest** com suporte a cobertura (`npm run test:coverage`).
+Ambos os projetos usam **Vitest 3** com suporte a cobertura (`npm run test:coverage`).

@@ -43,7 +43,7 @@ Interface do AgroFarm construída com **React 19 + Vite 6 + Tailwind CSS 4**, or
 | date-fns + react-day-picker | Datas |
 | Sonner | Toasts de feedback |
 | Lucide React | Ícones |
-| Vitest | Testes unitários |
+| Vitest 3 | Testes unitários |
 
 ---
 
@@ -228,6 +228,7 @@ mutation onError → toast via mutationProps.js
 | `/recuperar-senha` | Solicitar reset |
 | `/redefinir-senha` | Nova senha com token |
 | `/trocar-senha-inicial` | Troca obrigatória |
+| `/alterar-senha` | Alterar senha (logado; sempre permitido em `routeAccess`) |
 
 ### Rotas privadas
 
@@ -452,9 +453,12 @@ npm install
 cp .env.example .env
 npm run dev        # http://localhost:5173
 npm run build      # dist/
+npm run vercel-build
 npm run preview    # preview do build
 npm run lint
 ```
+
+**Produção:** https://agrofarm-fawn.vercel.app (build via `vercel-build` na Vercel).
 
 Requisito: API rodando com CORS apontando para o frontend.
 

@@ -83,7 +83,8 @@ Authorization: Bearer <token>
 | `/api/ia` | Insights inteligentes (Gemini) |
 | `/api/chatbot` | Chat IA com sessões persistentes |
 | `/api/notificacoes` | Notificações in-app |
-| `/api/noticias` | Feed de notícias agro |
+| `/api/noticias` | Feed de notícias agro e clima |
+| `/api/crons` | Jobs HTTP (Vercel Cron: cotações, lembretes, mapa) |
 
 ---
 
@@ -114,6 +115,9 @@ npm run evolution:provisionar -- 5531999999999
 | `npm run db:generate` | Prisma generate |
 | `npm run db:studio` | Prisma Studio |
 | `npm run db:seed` | Seed administrador |
+| `npm run db:push` | Aplica schema ao banco |
+| `npm run evolution:conectar` | Reconecta WhatsApp |
+| `npm run test:gemini-key` | Valida chaves Gemini |
 | `npm run evolution:status` | Status WhatsApp |
 | `npm run evolution:provisionar -- <numero>` | Provisionar instância |
 
@@ -132,6 +136,7 @@ JWT_EXPIRES_IN=7d
 CORS_ORIGIN=http://localhost:5173
 GEMINI_API_KEY_CHATBOT=
 GEMINI_API_KEY_INSIGHTS=
+RESEND_API_KEY=
 EVOLUTION_API_URL=http://localhost:8080
 EVOLUTION_API_KEY=
 EVOLUTION_INSTANCE=agrofarm

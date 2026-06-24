@@ -38,9 +38,9 @@ Servidor HTTP do AgroFarm construído com **Node.js + Express**, organizado em c
 | node-cron | Jobs (lembretes, cotações) |
 | Google Gemini | Chat IA e insights |
 | Evolution API | WhatsApp |
-| Resend / Nodemailer | E-mail (recuperação de senha) |
+| Resend | E-mail (recuperação de senha) |
 | @turf/turf | Cálculos geoespaciais |
-| Vitest | Testes |
+| Vitest 3 | Testes |
 
 ---
 
@@ -48,6 +48,7 @@ Servidor HTTP do AgroFarm construído com **Node.js + Express**, organizado em c
 
 ```text
 Agrofarm/api/
+├── index.js                   # Entry point Vercel (exporta app)
 ├── prisma/
 │   └── schema.prisma          # Modelo de dados (fonte da verdade)
 ├── src/
@@ -89,7 +90,7 @@ Agrofarm/api/
 
 ### `server.js`
 - Importa `app.js`, sobe na porta configurada.
-- Inicializa jobs (`lembretes.job.js`, `cotacao-update.job.js`, `cotacao-cleanup.job.js`).
+- Inicializa jobs (`lembretes.job.js`, `cotacao-update.job.js`, `cotacao-cleanup.job.js`, `arquivamento-mapa.job.js`).
 
 ### `app.js`
 - Middlewares globais: Helmet, CORS, JSON parser, logger.
@@ -243,10 +244,13 @@ Prefixo base: **`/api`**. Autenticação via `Authorization: Bearer <token>` sal
 | Método | Rota | Auth |
 | ------ | ---- | ---- |
 | POST | `/login` | — |
-| POST | `/cadastro` | — |
+| POST | `/change-initial-password` | — |
+| POST | `/cadastro` | JWT + ADMIN |
 | POST | `/logout` | — |
+| GET | `/recuperacao-config` | — |
 | POST | `/esqueci-senha` | — |
 | POST | `/redefinir-senha` | — |
+| POST | `/change-password` | JWT |
 | GET | `/me` | JWT |
 
 ### Usuários — `/usuarios` (ADMIN)
@@ -486,6 +490,9 @@ Prefixo base: **`/api`**. Autenticação via `Authorization: Bearer <token>` sal
 | Lembretes | `jobs/lembretes.job.js` | Envia lembretes pendentes via WhatsApp |
 | Cotação update | `jobs/cotacao-update.job.js` | Atualiza cache USD/EUR |
 | Cotação cleanup | `jobs/cotacao-cleanup.job.js` | Reset semanal do histórico |
+| Arquivamento mapa | `jobs/arquivamento-mapa.job.js` | Arquiva talhões após colheita |
+
+Na **Vercel**, os mesmos fluxos são disparados por cron HTTP em `/api/crons/*` (`crons.routes.js`).
 
 ---
 
@@ -497,7 +504,8 @@ Prefixo base: **`/api`**. Autenticação via `Authorization: Bearer <token>` sal
 | Google Gemini | Chat + Insights | `GEMINI_API_KEY_*` |
 | Evolution API | WhatsApp | `EVOLUTION_*` |
 | IBPT / Valraw | Taxas na simulação | `IBPT_*` |
-| Resend | E-mail transacional | configurado no auth service |
+| Resend | E-mail transacional | `RESEND_API_KEY`, `RESEND_FROM` |
+| Open-Meteo / geocoding | Clima nas notícias | serviço em `shared/noticias/` |
 | RSS externos | Feed de notícias | `noticia.sources.js` |
 
 ---
@@ -579,7 +587,7 @@ Ver [`.env.example`](../.env.example). Grupos principais:
 | ----- | --------- |
 | Servidor | `PORT`, `NODE_ENV`, `CORS_ORIGIN`, `WEB_APP_URL` |
 | Banco | `DATABASE_URL`, `DIRECT_URL` |
-| Auth | `JWT_SECRET`, `JWT_EXPIRES_IN` |
+| Auth | `JWT_SECRET`, `JWT_EXPIRES_IN`, `RESEND_API_KEY`, `RESEND_FROM`, `WEB_APP_URL` |
 | IA | `GEMINI_API_KEY_CHATBOT`, `GEMINI_API_KEY_INSIGHTS` |
 | WhatsApp | `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE` |
 | Simulação | `IBPT_ENABLED`, `IBPT_UF`, `IBPT_TOKEN`, … |

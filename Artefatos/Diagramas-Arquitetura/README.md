@@ -24,7 +24,7 @@ Diagramas de arquitetura e modelagem do sistema Agrofarm (padrão **C4 Model Lev
 - Camadas: middlewares → routes → controllers → services → views → repositories
 - Persistência PostgreSQL (Neon) via Prisma ORM
 - Jobs em background: lembretes, atualização/limpeza de cotações, arquivamento de talhões
-- Integrações externas: Google Gemini (Chat IA + Insights), Evolution API (WhatsApp), APIs de cotação, IBPT/Valraw (simulação), Resend (e-mail)
+- Integrações externas: Google Gemini (Chat IA + Insights), Evolution API (WhatsApp), APIs de cotação, IBPT/Valraw (simulação), Resend (e-mail), RSS e Open-Meteo (clima)
 
 ---
 
