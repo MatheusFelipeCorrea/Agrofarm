@@ -19,6 +19,12 @@ vi.mock("../../repositories/gasto.repository.js", () => ({
   },
 }));
 
+vi.mock("../../repositories/lucro.repository.js", () => ({
+  lucroRepository: {
+    buscarTotalComFiltros: vi.fn(),
+  },
+}));
+
 vi.mock("../../repositories/simulacao.repository.js", () => ({
   simulacaoRepository: {
     buscarCulturaPorId: vi.fn(),
@@ -43,6 +49,7 @@ const { simulacaoService } = await import("../../services/simulacao.service.js")
 const { cotacaoService } = await import("../../services/cotacao.service.js");
 const { dashboardRepository } = await import("../../repositories/dashboard.repository.js");
 const { gastoRepository } = await import("../../repositories/gasto.repository.js");
+const { lucroRepository } = await import("../../repositories/lucro.repository.js");
 const { simulacaoRepository } = await import("../../repositories/simulacao.repository.js");
 const { taxEstimatorService } = await import("../../services/taxEstimator.service.js");
 
@@ -57,6 +64,9 @@ describe("Integração: Simulação + Cotação", () => {
       totalPago: 100,
       totalPendente: 900,
       totalGasto: 1000,
+    });
+    lucroRepository.buscarTotalComFiltros.mockResolvedValue({
+      totalLucro: 500,
     });
     taxEstimatorService.estimarTaxas.mockResolvedValue({
       percentual: 0.05,
