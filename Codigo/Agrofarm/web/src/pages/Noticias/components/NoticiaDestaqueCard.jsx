@@ -1,7 +1,8 @@
 import { CalendarIcon, ClockIcon, ExternalLinkIcon } from "../../../components/ui/icons.jsx";
+import tractorFallback from "../../../assets/img/tractor-working-green-field.jpg";
 import NoticiaCategoriaBadge from "./NoticiaCategoriaBadge.jsx";
 
-const FALLBACK_IMG = "/tractor-working-green-field.jpg";
+const FALLBACK_IMG = tractorFallback;
 
 export default function NoticiaDestaqueCard({ noticia }) {
   if (!noticia) return null;

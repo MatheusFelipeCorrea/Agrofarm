@@ -1,11 +1,12 @@
 import styled from "styled-components";
+import tractorBg from "../../assets/img/tractor-working-green-field.jpg";
 
 /* ─── Container (fundo “hero” do auth) ─────────────────────── */
 
 export const Container = styled.div`
   height: 100vh;
   width: 100%;
-  background-image: url("/tractor-working-green-field.jpg");
+  background-image: url(${tractorBg});
   background-size: cover;
   background-position: center;
   display: flex;
