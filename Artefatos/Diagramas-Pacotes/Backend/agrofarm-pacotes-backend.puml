@@ -1,0 +1,206 @@
+@startuml agrofarm-pacotes-backend
+' Versão: 2.0
+' Data: 21/06/2026
+' Autor: Matheus Felipe Correa
+' Diagrama de Pacotes — Backend (api/src)
+
+skinparam packageStyle rectangle
+
+title Pacotes Backend — Agrofarm (api/src)\n<v2.0 — 21/06/2026 — Matheus Felipe Correa>
+
+package "api" {
+  package "config" {
+    [env.js]
+    [index.js]
+  }
+
+  package "middlewares" {
+    [auth.middleware]
+    [role.middleware]
+    [validator.middleware]
+    [limitador.middleware]
+    [logger.middleware]
+    [error.middleware]
+  }
+
+  package "routes" {
+    [auth.routes]
+    [usuario.routes]
+    [fazenda.routes]
+    [cultura.routes]
+    [colheita.routes]
+    [gasto.routes]
+    [lucro.routes]
+    [estoque.routes]
+    [insumo.routes]
+    [lembrete.routes]
+    [notificacao.routes]
+    [poligono.routes]
+    [dashboard.routes]
+    [cotacao.routes]
+    [simulacao.routes]
+    [chatbot.routes]
+    [ia.routes]
+    [noticia.routes]
+    [crons.routes]
+    [index.js]
+  }
+
+  package "controllers" {
+    [auth.controller]
+    [usuario.controller]
+    [fazenda.controller]
+    [fazendaCultura.controller]
+    [cultura.controller]
+    [colheita.controller]
+    [gasto.controller]
+    [lucro.controller]
+    [estoque.controller]
+    [insumo.controller]
+    [lembrete.controller]
+    [notificacao.controller]
+    [poligono.controller]
+    [poligonoHistorico.controller]
+    [dashboard.controller]
+    [cotacao.controller]
+    [simulacao.controller]
+    [chatbot.controller]
+    [ia.controller]
+    [insights.controller]
+    [noticia.controller]
+  }
+
+  package "schemas" {
+    [auth.schema]
+    [usuario.schema]
+    [fazenda.schema]
+    [cultura.schema]
+    [colheita.schema]
+    [gasto.schema]
+    [lucro.schema]
+    [insumo.schema]
+    [lembrete.schema]
+    [poligono.schema]
+    [dashboard.schema]
+    [simulacao.schema]
+    [chatbot.schema]
+  }
+
+  package "services" {
+    [auth.service]
+    [usuario.service]
+    [fazenda.service]
+    [fazendaCultura.service]
+    [cultura.service]
+    [colheita.service]
+    [gasto.service]
+    [lucro.service]
+    [estoque.service]
+    [insumo.service]
+    [lembrete.service]
+    [notificacao.service]
+    [poligono.service]
+    [poligonoHistorico.service]
+    [geometry.service]
+    [dashboard.service]
+    [cotacao.service]
+    [simulacao.service]
+    [taxEstimator.service]
+    [ibpt.service]
+    [chatbot.service]
+    [insights.service]
+    [noticia.service]
+    [whatsapp.service]
+    package "noticia" {
+      [noticia.sources]
+      [noticia.categorizar]
+      [noticia.clima]
+    }
+  }
+
+  package "repositories" {
+    [auth.repository]
+    [usuario.repository]
+    [fazenda.repository]
+    [fazendaCultura.repository]
+    [cultura.repository]
+    [colheita.repository]
+    [gasto.repository]
+    [lucro.repository]
+    [estoque.repository]
+    [insumo.repository]
+    [lembrete.repository]
+    [notificacao.repository]
+    [poligonoHistorico.repository]
+    [simulacao.repository]
+    [chatbot.repository]
+    [insights.repository]
+    [dashboard.repository]
+  }
+
+  package "views" {
+    [usuario.view]
+    [fazenda.view]
+    [colheita.view]
+    [gasto.view]
+    [lucro.view]
+    [cotacao.view]
+    [simulacao.view]
+    [chatbot.view]
+    [insights.view]
+    [noticia.view]
+  }
+
+  package "shared" {
+    package "gemini" { [geminiClient] }
+    package "navigation" { [menu.config] }
+    package "utils" { [logger, email, passwordValidation] }
+    package "errors" { [AppError] }
+    package "constants" { [hectares] }
+    package "cultura" { [culturaStatus] }
+    package "estoque" { [estoque helpers] }
+    package "fazenda" { [fazenda helpers] }
+    package "finance" { [finance helpers] }
+    package "lembrete" { [lembrete helpers] }
+    package "poligono" { [poligonoNome] }
+  }
+
+  package "jobs" {
+    [lembretes.job]
+    [cotacao-update.job]
+    [cotacao-cleanup.job]
+    [arquivamento-mapa.job]
+  }
+
+  package "database" {
+    [client.js]
+    package "seeds" {
+      [culturas.seed]
+      [mega-demo.seed]
+    }
+  }
+
+  package "utils" {
+    [lembrete.recorrencia]
+  }
+
+  [app.js]
+  [server.js]
+}
+
+' Dependências entre camadas
+routes --> middlewares
+routes --> controllers
+controllers --> schemas
+controllers --> services
+controllers --> views
+services --> repositories
+services --> shared
+repositories --> database
+jobs --> services
+jobs --> database
+server --> jobs
+server --> app
+app --> routes
+
+@enduml

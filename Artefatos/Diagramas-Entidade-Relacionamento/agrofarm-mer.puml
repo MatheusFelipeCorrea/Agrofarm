@@ -1,0 +1,312 @@
+@startuml agrofarm-mer
+' Versão: 2.0
+' Data: 21/06/2026
+' Autor: Matheus Felipe Correa
+' Modelo Entidade-Relacionamento — schema.prisma (Agrofarm)
+
+hide circle
+skinparam linetype ortho
+
+title MER — Agrofarm\n<v2.0 — 21/06/2026 — Matheus Felipe Correa>
+
+entity "usuarios" as usuarios {
+  * id : UUID <<PK>>
+  --
+  nome : VARCHAR(100)
+  email : VARCHAR(255) <<UK>>
+  senha : VARCHAR(255)
+  role : role
+  telefone : VARCHAR(20)
+  token_reset : VARCHAR(255)
+  token_reset_expira : TIMESTAMP
+  must_change_password : BOOLEAN
+  token_version : INT
+  criado_em : TIMESTAMP
+}
+
+entity "fazendas" as fazendas {
+  * id : UUID <<PK>>
+  --
+  nome : VARCHAR(150)
+  tipo : tipo_fazenda
+  localizacao : VARCHAR(255)
+  latitude : DECIMAL
+  longitude : DECIMAL
+  ativa : BOOLEAN
+  # arrendamento_cultura_id : UUID <<FK>>
+  arrendamento_quantidade_sacas : DECIMAL
+  arrendamento_periodicidade : periodicidade_arrendamento
+  arrendamento_data_inicio : DATE
+  criado_em : TIMESTAMP
+  atualizado_em : TIMESTAMP
+}
+
+entity "culturas" as culturas {
+  * id : UUID <<PK>>
+  --
+  nome : VARCHAR(100) <<UK>>
+  cor : VARCHAR(7)
+  hectares : DECIMAL
+  criado_em : TIMESTAMP
+}
+
+entity "usuarios_fazendas" as usuarios_fazendas {
+  * id : UUID <<PK>>
+  --
+  # usuario_id : UUID <<FK>>
+  # fazenda_id : UUID <<FK>>
+  criado_em : TIMESTAMP
+}
+
+entity "fazenda_culturas" as fazenda_culturas {
+  * id : UUID <<PK>>
+  --
+  # fazenda_id : UUID <<FK>>
+  # cultura_id : UUID <<FK>>
+  hectares : DECIMAL
+  status : status_cultura
+  criado_em : TIMESTAMP
+  deletado_em : TIMESTAMP
+  deletado_por : UUID
+}
+
+entity "colheitas" as colheitas {
+  * id : UUID <<PK>>
+  --
+  # fazenda_id : UUID <<FK>>
+  # cultura_id : UUID <<FK>>
+  area : DECIMAL
+  sacas_produzidas : DECIMAL
+  ano : INT
+  data_colheita : DATE
+  criado_em : TIMESTAMP
+  atualizado_em : TIMESTAMP
+}
+
+entity "gastos" as gastos {
+  * id : UUID <<PK>>
+  --
+  # colheita_id : UUID <<FK>>
+  tipo : VARCHAR(50)
+  tipo_personalizado : VARCHAR(100)
+  valor : DECIMAL
+  data_vencimento : DATE
+  status : status_gasto
+  descricao : TEXT
+  data : DATE
+  criado_em : TIMESTAMP
+  atualizado_em : TIMESTAMP
+}
+
+entity "lucros" as lucros {
+  * id : UUID <<PK>>
+  --
+  # colheita_id : UUID <<FK>>
+  # fazenda_id : UUID <<FK>>
+  origem : origem_lucro
+  status_recebimento : status_recebimento_arrendamento
+  quantidade_sacas : DECIMAL
+  valor_unitario : DECIMAL
+  comprador : VARCHAR(150)
+  data : DATE
+  criado_em : TIMESTAMP
+}
+
+entity "entregas_arrendamento" as entregas_arrendamento {
+  * id : UUID <<PK>>
+  --
+  # fazenda_id : UUID <<FK>>
+  # cultura_id : UUID <<FK>>
+  # colheita_id : UUID <<FK>>
+  quantidade_sacas : DECIMAL
+  data : DATE
+  status : status_entrega_arrendamento
+  criado_em : TIMESTAMP
+  atualizado_em : TIMESTAMP
+}
+
+entity "insumos_atividades" as insumos_atividades {
+  * id : UUID <<PK>>
+  --
+  # funcionario_id : UUID <<FK>>
+  # fazenda_id : UUID <<FK>>
+  item : VARCHAR(150)
+  categoria : VARCHAR(50)
+  quantidade : DECIMAL
+  unidade : VARCHAR(20)
+  valor_unitario : DECIMAL
+  fornecedor : VARCHAR(200)
+  observacoes : TEXT
+  data : DATE
+  criado_em : TIMESTAMP
+}
+
+entity "lembretes" as lembretes {
+  * id : UUID <<PK>>
+  --
+  # usuario_id : UUID <<FK>>
+  # fazenda_id : UUID <<FK>>
+  # colheita_id : UUID <<FK>>
+  # poligono_id : UUID <<FK>>
+  titulo : VARCHAR(150)
+  descricao : TEXT
+  data_lembrete : TIMESTAMP
+  telefone_whatsapp : VARCHAR(20)
+  status : status_lembrete
+  recorrencia : recorrencia_lembrete
+  recorrencia_custom : VARCHAR(120)
+  criado_em : TIMESTAMP
+  enviado_em : TIMESTAMP
+  erro_envio : TEXT
+}
+
+entity "notificacoes" as notificacoes {
+  * id : UUID <<PK>>
+  --
+  # usuario_id : UUID <<FK>>
+  tipo : tipo_notificacao
+  titulo : VARCHAR(150)
+  descricao : TEXT
+  rota : VARCHAR(255)
+  referencia_id : UUID
+  lida_em : TIMESTAMP
+  criado_em : TIMESTAMP
+  atualizado_em : TIMESTAMP
+}
+
+entity "cotacoes" as cotacoes {
+  * id : UUID <<PK>>
+  --
+  valor : DECIMAL
+  fonte : VARCHAR(100)
+  atualizado_em : TIMESTAMP
+}
+
+entity "simulacoes" as simulacoes {
+  * id : UUID <<PK>>
+  --
+  # usuario_id : UUID <<FK>>
+  # fazenda_id : UUID <<FK>>
+  # cultura_id : UUID <<FK>>
+  quantidade_sacas : DECIMAL
+  valor_saca : DECIMAL
+  moeda : VARCHAR(3)
+  taxa_cambio_manual : DECIMAL
+  valor_bruto : DECIMAL
+  valor_liquido : DECIMAL
+  composicao_taxas : JSON
+  abatimento_divida : DECIMAL
+  novo_saldo_divida : DECIMAL
+  criado_em : TIMESTAMP
+}
+
+entity "poligonos_fazenda" as poligonos_fazenda {
+  * id : UUID <<PK>>
+  --
+  # fazenda_id : UUID <<FK>>
+  # cultura_id : UUID <<FK>>
+  # criado_por : UUID <<FK>>
+  nome : VARCHAR(100)
+  geometria : geometry(Polygon,4326)
+  area_hectares : DECIMAL
+  data_plantio : DATE
+  data_colheita : DATE
+  criado_em : TIMESTAMP
+  atualizado_em : TIMESTAMP
+}
+
+entity "poligonos_fazenda_historico" as poligonos_historico {
+  * id : UUID <<PK>>
+  --
+  # fazenda_id : UUID <<FK>>
+  poligono_id_origem : UUID
+  # cultura_id : UUID <<FK>>
+  # colheita_id : UUID <<FK>>
+  nome : VARCHAR(100)
+  data_plantio : DATE
+  data_colheita : DATE
+  area_hectares : DECIMAL
+  geometria : geometry(Polygon,4326)
+  status : status_historico_mapa
+  arquivado_em : TIMESTAMP
+  restaurado_em : TIMESTAMP
+}
+
+entity "chat_sessoes" as chat_sessoes {
+  * id : UUID <<PK>>
+  --
+  # usuario_id : UUID <<FK>>
+  titulo : VARCHAR(150)
+  criado_em : TIMESTAMP
+  atualizado_em : TIMESTAMP
+}
+
+entity "chat_mensagens" as chat_mensagens {
+  * id : UUID <<PK>>
+  --
+  # sessao_id : UUID <<FK>>
+  papel : VARCHAR(20)
+  conteudo : TEXT
+  metadados : JSON
+  criado_em : TIMESTAMP
+}
+
+entity "insight_snapshots" as insight_snapshots {
+  * id : UUID <<PK>>
+  --
+  tipo : VARCHAR(50)
+  # fazenda_id : UUID <<FK>>
+  escopo : VARCHAR(20)
+  conteudo : JSON
+  # gerado_por : UUID <<FK>>
+  gerado_em : TIMESTAMP
+}
+
+' Relacionamentos N:M e 1:N
+usuarios ||--o{ usuarios_fazendas
+fazendas ||--o{ usuarios_fazendas
+
+fazendas ||--o{ fazenda_culturas
+culturas ||--o{ fazenda_culturas
+
+fazendas ||--o{ colheitas
+culturas ||--o{ colheitas
+colheitas ||--o{ gastos
+colheitas ||--o{ lucros
+
+fazendas ||--o{ lucros
+culturas ||--o| fazendas : arrendamento
+
+fazendas ||--o{ entregas_arrendamento
+culturas ||--o{ entregas_arrendamento
+colheitas ||--o{ entregas_arrendamento
+
+usuarios ||--o{ insumos_atividades
+fazendas ||--o{ insumos_atividades
+
+usuarios ||--o{ lembretes
+fazendas ||--o{ lembretes
+colheitas ||--o{ lembretes
+poligonos_fazenda ||--o{ lembretes
+
+usuarios ||--o{ notificacoes
+
+usuarios ||--o{ chat_sessoes
+chat_sessoes ||--o{ chat_mensagens
+
+usuarios ||--o{ simulacoes
+fazendas ||--o{ simulacoes
+culturas ||--o{ simulacoes
+
+fazendas ||--o{ poligonos_fazenda
+culturas ||--o{ poligonos_fazenda
+usuarios ||--o{ poligonos_fazenda
+
+fazendas ||--o{ poligonos_historico
+culturas ||--o{ poligonos_historico
+colheitas ||--o{ poligonos_historico
+
+usuarios ||--o{ insight_snapshots
+fazendas ||--o{ insight_snapshots
+
+@enduml
