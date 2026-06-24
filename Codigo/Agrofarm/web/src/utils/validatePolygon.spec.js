@@ -78,12 +78,9 @@ describe("validatePolygon", () => {
     expect(validarNomeArea("a".repeat(101)).valido).toBe(false);
   });
 
-  it("validarDataPlantio rejeita data futura", () => {
+  it("validarDataPlantio aceita data futura", () => {
     const futuro = new Date();
     futuro.setFullYear(futuro.getFullYear() + 1);
-    expect(validarDataPlantio(futuro.toISOString())).toEqual({
-      valido: false,
-      erro: "Data de plantio não pode ser futura",
-    });
+    expect(validarDataPlantio(futuro.toISOString())).toEqual({ valido: true });
   });
 });

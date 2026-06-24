@@ -55,7 +55,7 @@ describe("simulacaoController", () => {
     });
     expect(simulacaoView.renderDividas).toHaveBeenCalledWith(servicePayload);
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith(viewPayload);
+    expect(res.json).toHaveBeenCalledWith({ status: "success", data: viewPayload });
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -85,7 +85,7 @@ describe("simulacaoController", () => {
     });
     expect(simulacaoView.renderCalculo).toHaveBeenCalledWith(servicePayload);
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith(viewPayload);
+    expect(res.json).toHaveBeenCalledWith({ status: "success", data: viewPayload });
     expect(next).not.toHaveBeenCalled();
   });
 
