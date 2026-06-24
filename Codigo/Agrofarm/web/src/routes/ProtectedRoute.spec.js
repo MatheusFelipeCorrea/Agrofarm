@@ -46,6 +46,12 @@ describe("ProtectedRoute helpers", () => {
     expect(isPathAllowed("/gastos", menu)).toBe(false);
   });
 
+  it("permite alterar senha para qualquer usuario autenticado", () => {
+    const menu = [{ id: "gerenciar-insumos-funcionario", path: "/insumos", children: [] }];
+
+    expect(isPathAllowed("/alterar-senha", menu)).toBe(true);
+  });
+
   it("identifica corretamente rotas publicas de autenticacao", () => {
     expect(isAuthPublicPath("/login")).toBe(true);
     expect(isAuthPublicPath("/recuperar-senha")).toBe(true);

@@ -184,6 +184,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   }
 
   const LogoutIcon = ICON_MAP.logout;
+  const AlterarSenhaIcon = ICON_MAP.usuarios;
   const userInitials = getUserInitials(usuario?.nome);
   const valorDolarAtual = Number(mercadoData?.dolar?.valor);
   const valorEuroAtual = Number(mercadoData?.euro?.valor);
@@ -476,6 +477,18 @@ export default function Sidebar({ collapsed, onToggle }) {
           </div>
         )}
       </div>
+
+      {/* Alterar senha */}
+      <Link
+        to="/alterar-senha"
+        title={collapsed ? "Alterar senha" : undefined}
+        className={`mx-3 mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white ${
+          collapsed ? "justify-center" : ""
+        }`}
+      >
+        <AlterarSenhaIcon className="h-5 w-5 shrink-0" />
+        {!collapsed && <span className="text-sm font-medium">Alterar senha</span>}
+      </Link>
 
       {/* Logout */}
       <button

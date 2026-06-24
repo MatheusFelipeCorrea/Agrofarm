@@ -54,3 +54,8 @@ export function PublicRoute({ children }) {
 
   return children;
 }
+
+/** Rotas de auth acessíveis mesmo com sessão ativa (recuperar/redefinir senha). */
+export function AuthPageRoute({ children }) {
+  return children;
+}

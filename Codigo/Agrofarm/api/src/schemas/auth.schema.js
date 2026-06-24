@@ -43,13 +43,24 @@ export const esqueciSenhaSchema = z.object({
 
 export const redefinirSenhaSchema = z.object({
     token: z.string().min(1, 'Token é obrigatório'),
-    novaSenha: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+    novaSenha: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
 })
 
 export const changeInitialPasswordSchema = z
     .object({
         userId: z.string().uuid('Usuario invalido'),
         oldPassword: z.string().min(1, 'Senha atual e obrigatoria'),
+        newPassword: z.string().min(8, 'Nova senha deve ter no minimo 8 caracteres'),
+        confirmNewPassword: z.string().min(8, 'Confirmacao de senha e obrigatoria'),
+    })
+    .refine((dados) => dados.newPassword === dados.confirmNewPassword, {
+        message: 'Nova senha e confirmacao devem ser iguais',
+        path: ['confirmNewPassword'],
+    })
+
+export const changePasswordSchema = z
+    .object({
+        currentPassword: z.string().min(1, 'Senha atual e obrigatoria'),
         newPassword: z.string().min(8, 'Nova senha deve ter no minimo 8 caracteres'),
         confirmNewPassword: z.string().min(8, 'Confirmacao de senha e obrigatoria'),
     })

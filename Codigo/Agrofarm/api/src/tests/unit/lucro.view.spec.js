@@ -31,9 +31,8 @@ describe("lucroView", () => {
   });
 
   it("renderTotal converte para numero", () => {
-    expect(lucroView.renderTotal({ totalLucro: "2500.5", totalPendenteArrendamento: 100 })).toEqual({
+    expect(lucroView.renderTotal({ totalLucro: "2500.5" })).toEqual({
       totalLucro: 2500.5,
-      totalPendenteArrendamento: 100,
     });
   });
 });

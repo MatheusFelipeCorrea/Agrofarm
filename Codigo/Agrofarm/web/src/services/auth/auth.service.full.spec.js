@@ -50,12 +50,12 @@ describe("auth.service demais endpoints", () => {
     const sessao = await obterSessaoAtual();
     await logout();
     await esqueciSenha({ email: "a@b.com" });
-    await redefinirSenha({ token: "tok", novaSenha: "123456" });
+    await redefinirSenha({ token: "tok", novaSenha: "12345678" });
 
     expect(sessao.token).toBe("jwt");
     expect(api.get).toHaveBeenCalledWith("/auth/me");
     expect(api.post).toHaveBeenCalledWith("/auth/logout");
     expect(api.post).toHaveBeenCalledWith("/auth/esqueci-senha", { email: "a@b.com" });
-    expect(api.post).toHaveBeenCalledWith("/auth/redefinir-senha", { token: "tok", novaSenha: "123456" });
+    expect(api.post).toHaveBeenCalledWith("/auth/redefinir-senha", { token: "tok", novaSenha: "12345678" });
   });
 });

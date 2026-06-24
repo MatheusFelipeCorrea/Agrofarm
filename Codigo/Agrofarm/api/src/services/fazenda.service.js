@@ -4,8 +4,8 @@ import { AppError } from '../shared/errors/AppError.js'
 import { TIPO_FAZENDA_SOMENTE_LEITURA } from '../shared/fazenda/fazendaOperacao.js'
 import {
     normalizarCamposArrendamento,
-    sincronizarLucrosArrendamento,
-} from '../shared/fazenda/arrendamentoLucro.js'
+    sincronizarEntregasArrendamento,
+} from '../shared/fazenda/arrendamentoEntrega.js'
 import { prisma } from '../database/client.js'
 import { poligonoHistoricoService } from './poligonoHistorico.service.js'
 
@@ -125,7 +125,7 @@ export const fazendaService = {
         })
 
         if (dados.tipo === TIPO_FAZENDA_SOMENTE_LEITURA) {
-            await sincronizarLucrosArrendamento(fazenda.id)
+            await sincronizarEntregasArrendamento(fazenda.id)
         }
 
         return fazendaRepository.buscarPorId(fazenda.id)
@@ -147,7 +147,13 @@ export const fazendaService = {
         const tipoFinal = dados.tipo ?? fazenda.tipo
         const arrendamento = normalizarCamposArrendamento({
             tipo: tipoFinal,
-            arrendamentoValor: dados.arrendamentoValor ?? (fazenda.arrendamento_valor != null ? Number(fazenda.arrendamento_valor) : undefined),
+            arrendamentoCulturaId:
+                dados.arrendamentoCulturaId ?? fazenda.arrendamento_cultura_id ?? undefined,
+            arrendamentoQuantidadeSacas:
+                dados.arrendamentoQuantidadeSacas ??
+                (fazenda.arrendamento_quantidade_sacas != null
+                    ? Number(fazenda.arrendamento_quantidade_sacas)
+                    : undefined),
             arrendamentoPeriodicidade:
                 dados.arrendamentoPeriodicidade ?? fazenda.arrendamento_periodicidade ?? undefined,
             arrendamentoDataInicio:
@@ -171,16 +177,17 @@ export const fazendaService = {
         const atualizada = await fazendaRepository.update(id, payload)
 
         if (tipoFinal !== TIPO_FAZENDA_SOMENTE_LEITURA) {
-            await prisma.lucros.deleteMany({
-                where: { fazenda_id: id, origem: 'ARRENDAMENTO' },
+            await prisma.entregas_arrendamento.deleteMany({
+                where: { fazenda_id: id, status: 'PENDENTE' },
             })
         } else if (
-            dados.arrendamentoValor !== undefined ||
+            dados.arrendamentoCulturaId !== undefined ||
+            dados.arrendamentoQuantidadeSacas !== undefined ||
             dados.arrendamentoPeriodicidade !== undefined ||
             dados.arrendamentoDataInicio !== undefined ||
             dados.tipo === TIPO_FAZENDA_SOMENTE_LEITURA
         ) {
-            await sincronizarLucrosArrendamento(id)
+            await sincronizarEntregasArrendamento(id)
         }
 
         return atualizada
@@ -205,6 +212,8 @@ export const fazendaService = {
         if (vinculos.lembretes > 0) {
             throw new AppError('Não é possível excluir: fazenda possui lembretes vinculados', 400)
         }
+
+        await prisma.entregas_arrendamento.deleteMany({ where: { fazenda_id: id } })
 
         await fazendaRepository.delete(id)
     },

@@ -1,159 +1,172 @@
-# Código do Projeto
+# Código — AgroFarm
 
-Mantenha neste diretório todo o código do projeto. Se necessário, descreva neste arquivo aspectos relevantes da estrutura de diretórios criada para organização do código.
+Este diretório concentra todo o código executável do projeto. A aplicação é dividida em dois pacotes independentes dentro de `Agrofarm/`:
 
+| Pacote | Stack | Porta padrão |
+| ------ | ----- | ------------ |
+| **`api/`** | Node.js · Express · Prisma · PostgreSQL | `3333` |
+| **`web/`** | React 19 · Vite 6 · Tailwind CSS 4 | `5173` |
 
-# 🚀 Como rodar o projeto Agrofarm
+---
 
-## ✅ Pré-requisitos
+## Pré-requisitos
 
 | Ferramenta | Versão mínima | Verificar |
-|------------|--------------|-----------|
+| ---------- | ------------- | --------- |
 | Node.js | 20.0.0 | `node -v` |
 | npm | 10.0.0 | `npm -v` |
-| Git | qualquer | `git -v` |
+| Git | qualquer | `git --version` |
+| Docker | opcional | Evolution API local (WhatsApp) |
 
 ---
 
-## 📦 1. Clonar o repositório
+## Setup inicial
+
+### 1. Clonar e entrar no repositório
 
 ```bash
-git clone https://github.com/[org]/[repo].git
-cd [repo]/Codigo
+git clone https://github.com/ICEI-PUC-Minas-PMGES-TI/pmg-es-2026-1-ti4-3170100-agrofarm.git
+cd pmg-es-2026-1-ti4-3170100-agrofarm/Codigo
 ```
 
----
-
-## ⚙️ 2. Configurar o Backend
+### 2. Backend (`Agrofarm/api`)
 
 ```bash
-# Entrar na pasta
 cd Agrofarm/api
-
-# Instalar dependências
 npm install
-
-# Copiar o .env
 cp .env.example .env
-# → solicitar o .env preenchido ao Jesus
+# Preencher .env com credenciais fornecidas pela equipe
+npm run db:generate
+npm run db:seed          # primeira vez apenas
+npm run dev
 ```
 
-### O `.env` deve ter:
-```env
-PORT=3333
-NODE_ENV=development
+Servidor em **http://localhost:3333** · health check: `GET /api/health`
 
-DATABASE_URL="postgresql://..."   ← pedir pro Jesus
-DIRECT_URL="postgresql://..."     ← pedir pro Jesus
-
-JWT_SECRET=
-JWT_EXPIRES_IN=7d
-
-CORS_ORIGIN=http://localhost:5173
-
-EVOLUTION_API_URL=
-EVOLUTION_API_KEY=
-EVOLUTION_INSTANCE=
-
-GEMINI_API_KEY=
-```
+### 3. Frontend (`Agrofarm/web`)
 
 ```bash
-# Gerar o client do Prisma
-npm run db:generate
-
-# Popular o banco (apenas na primeira vez)
-npm run db:seed
-
-# Rodar o servidor
+cd ../web
+npm install
+cp .env.example .env
 npm run dev
-# → http://localhost:3333
 ```
+
+Interface em **http://localhost:5173**
 
 ---
 
-## 🌐 3. Configurar o Frontend
+## Variáveis de ambiente
 
-```bash
-# Voltar para a raiz e entrar no frontend
-cd ../web
+### API (`Agrofarm/api/.env`)
 
-# Instalar dependências
-npm install
+| Variável | Obrigatória | Descrição |
+| -------- | ----------- | --------- |
+| `PORT` | Sim | Porta do servidor (padrão `3333`) |
+| `DATABASE_URL` | Sim | Connection string PostgreSQL (Neon) |
+| `DIRECT_URL` | Sim | URL direta para migrations/Prisma |
+| `JWT_SECRET` | Sim | Segredo para assinatura de tokens |
+| `JWT_EXPIRES_IN` | Sim | Expiração do JWT (ex.: `7d`) |
+| `CORS_ORIGIN` | Sim | Origens permitidas (ex.: `http://localhost:5173`) |
+| `GEMINI_API_KEY_CHATBOT` | Sim* | Chave Gemini para o chat IA |
+| `GEMINI_API_KEY_INSIGHTS` | Sim* | Chave Gemini para insights |
+| `EVOLUTION_API_URL` | Não | URL da Evolution API (WhatsApp) |
+| `EVOLUTION_API_KEY` | Não | Chave de autenticação Evolution |
+| `EVOLUTION_INSTANCE` | Não | Nome da instância WhatsApp |
+| `IBPT_*` | Não | Configuração de estimativa fiscal na simulação |
 
-# Copiar o .env
-cp .env.example .env
-```
+\* Necessárias para funcionalidades de IA. Sem elas, chat e insights retornam erro controlado.
 
-### O `.env` deve ter:
+Consulte `.env.example` para a lista completa com comentários.
+
+### Web (`Agrofarm/web/.env`)
+
 ```env
 VITE_API_URL=http://localhost:3333/api
 ```
 
-```bash
-# Rodar o frontend
-npm run dev
-# → http://localhost:5173
-```
+---
+
+## Scripts — Backend
+
+| Script | Descrição |
+| ------ | --------- |
+| `npm run dev` | Servidor com hot reload (`node --watch`) |
+| `npm run dev:stable` | Servidor sem watch |
+| `npm start` | Produção |
+| `npm test` | Testes unitários e de integração (Vitest) |
+| `npm run test:coverage` | Cobertura de testes |
+| `npm run lint` | ESLint |
+| `npm run db:generate` | Gera Prisma Client após mudanças no schema |
+| `npm run db:pull` | Sincroniza schema a partir do banco |
+| `npm run db:studio` | Interface visual Prisma Studio |
+| `npm run db:seed` | Usuário administrador inicial |
+| `npm run db:seed:mega` | Dados de demonstração extensos |
+| `npm run db:verify` | Verifica conectividade e integridade |
+| `npm run evolution:status` | Status da instância WhatsApp |
+| `npm run evolution:provisionar -- <numero>` | Provisiona instância + QR Code |
+| `npm run cotacao:cleanup` | Limpeza manual do histórico de cotações |
 
 ---
 
-## ▶️ Rodando os dois juntos
+## Scripts — Frontend
+
+| Script | Descrição |
+| ------ | --------- |
+| `npm run dev` | Vite dev server com HMR |
+| `npm run build` | Build de produção em `dist/` |
+| `npm run preview` | Preview do build local |
+| `npm test` | Testes (Vitest) |
+| `npm run test:coverage` | Cobertura |
+| `npm run lint` | ESLint |
+
+---
+
+## WhatsApp (Evolution API)
+
+Integração opcional para envio automático de lembretes.
 
 ```bash
-# Terminal 1 — Backend
 cd Agrofarm/api
-npm run dev
-
-# Terminal 2 — Frontend
-cd Agrofarm/web
-npm run dev
+docker compose -f docker-compose.evolution.yml up -d
 ```
+
+Endpoints relevantes:
+
+- `GET /api/lembretes/whatsapp/status` — status da conexão
+- `POST /api/lembretes/whatsapp/provisionar` — cria instância e retorna QR
+- `POST /api/lembretes/:id/enviar` — envio manual
+
+Job agendado em `src/jobs/lembretes.job.js` processa lembretes pendentes automaticamente.
 
 ---
 
-## ⚠️ Pontos importantes
+## Boas práticas
 
-```
-→ Nunca commitar o .env
-→ Nunca rodar npm run db:migrate
-(banco já está criado no Neon)
-→ Sempre usar npm run db:generate
-após mudanças no schema.prisma
-→ Node.js 20+ obrigatório
-```
-
----
-
-## 📋 Scripts Backend
-
-| Script | Descrição |
-|--------|-----------|
-| `npm run dev` | Servidor com hot reload |
-| `npm start` | Servidor produção |
-| `npm test` | Testes |
-| `npm run db:generate` | Gera client Prisma |
-| `npm run db:pull` | Sincroniza schema com banco |
-| `npm run db:studio` | Interface visual do banco |
-| `npm run db:seed` | Dados iniciais |
-
-## 📋 Scripts Frontend
-
-| Script | Descrição |
-|--------|-----------|
-| `npm run dev` | Interface com hot reload |
-| `npm run build` | Build de produção |
-| `npm test` | Testes |
-| `npm run lint` | Qualidade de código |
+- **Nunca commitar** arquivos `.env`.
+- Após alterar `schema.prisma`, executar `npm run db:generate` no backend.
+- O banco Neon já está provisionado — **não executar** `prisma migrate dev` sem alinhamento com a equipe.
+- Node.js **20+** é obrigatório (compatibilidade com dependências recentes).
+- Documentação detalhada de arquitetura:
+  - API → [`Agrofarm/api/Documents/Readme.md`](Agrofarm/api/Documents/Readme.md)
+  - Web → [`Agrofarm/web/Documents/Readme.md`](Agrofarm/web/Documents/Readme.md)
 
 ---
 
-## 📲 WhatsApp (Evolution API)
+## Fluxo de desenvolvimento
 
-Integração implementada no backend para lembretes:
-
-- `GET /api/lembretes/whatsapp/status` → status da configuração Evolution.
-- `POST /api/lembretes/whatsapp/provisionar` → cria instância e retorna QR/pairing para conexão.
-- `POST /api/lembretes/:id/enviar` → dispara envio manual de um lembrete.
-- Job automático em `src/jobs/lembretes.job.js` para processar lembretes pendentes.
-- Infra local: `docker compose -f Codigo/Agrofarm/api/docker-compose.evolution.yml up -d`.
+```text
+Alteração no schema.prisma
+        │
+        ▼
+npm run db:generate (api)
+        │
+        ▼
+Implementar repository → service → controller → routes
+        │
+        ▼
+Implementar service → queries → página (web)
+        │
+        ▼
+npm test (api + web)
+```

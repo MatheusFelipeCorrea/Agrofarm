@@ -2,7 +2,10 @@ import { api } from "../api.js";
 
 export async function listarPoligonos(fazendaId) {
   const { data } = await api.get("/poligonos", { params: { fazendaId } });
-  return data.data;
+  return {
+    poligonos: data.data,
+    colheitasArquivadas: data.meta?.colheitasArquivadas ?? 0,
+  };
 }
 
 export async function buscarPoligono(id) {

@@ -41,11 +41,7 @@ export function validateUsuarioFormForSubmit(form, mode, editUserId) {
   }
 
   /** @type {Record<string, unknown>} */
-  const payload = { nome, email, role, fazendaIds };
-
-  if (telefone) {
-    payload.telefone = telefone;
-  }
+  const payload = { nome, email, role, fazendaIds, telefone: telefone || null };
 
   if (form.resetPasswordToDefault) {
     payload.resetPasswordToDefault = true;

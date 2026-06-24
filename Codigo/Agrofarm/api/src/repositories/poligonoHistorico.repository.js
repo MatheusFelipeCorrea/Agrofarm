@@ -81,6 +81,40 @@ export const poligonoHistoricoRepository = {
         return rows[0] || null
     },
 
+    async buscarColheitaPorFazendaCulturaData(fazendaId, culturaId, dataColheita) {
+        if (!culturaId || !dataColheita) return null
+        const dataParam = new Date(dataColheita)
+        const rows = await prisma.$queryRaw`
+      SELECT id, ano, data_colheita, area, sacas_produzidas
+      FROM colheitas
+      WHERE fazenda_id = ${fazendaId}::uuid
+        AND cultura_id = ${culturaId}::uuid
+        AND data_colheita = ${dataParam}::date
+      LIMIT 1
+    `
+        return rows[0] || null
+    },
+
+    async criarColheitaDoMapa({ fazenda_id, cultura_id, data_colheita, ano, area }) {
+        return prisma.colheitas.create({
+            data: {
+                fazenda_id,
+                cultura_id,
+                data_colheita,
+                ano,
+                area,
+                sacas_produzidas: 0,
+            },
+        })
+    },
+
+    async atualizarAreaColheita(id, area) {
+        return prisma.colheitas.update({
+            where: { id },
+            data: { area },
+        })
+    },
+
     async listarPorFazenda(fazendaId, filtros = {}) {
         const { culturaId, status, q } = filtros
         const rows = await prisma.$queryRaw`

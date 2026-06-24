@@ -1,14 +1,32 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { env } from "../../config/env.js";
 import { logger } from "../utils/logger.js";
-import {
-  geminiInsightsDisponivel,
-  resolverChaveGeminiInsights,
-  validarFormatoChaveGemini,
-} from "./geminiKey.js";
 
 export const MODELOS_GEMINI = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash"];
 
-export { geminiInsightsDisponivel, resolverChaveGeminiInsights } from "./geminiKey.js";
+function normalizarChaveGemini(valor) {
+  return String(valor ?? "")
+    .trim()
+    .replace(/\/\/.*$/, "")
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
+    .replace(/\s+/g, "");
+}
+
+export function resolverChaveGeminiInsights() {
+  return (
+    normalizarChaveGemini(env.GEMINI_API_KEY_INSIGHTS) ||
+    normalizarChaveGemini(env.GEMINI_API_KEY_CHATBOT) ||
+    normalizarChaveGemini(env.GEMINI_API_KEY)
+  );
+}
+
+function validarFormatoChaveGemini(chave) {
+  if (!chave) return { ok: false, codigo: "vazia" };
+  if (!chave.startsWith("AIza")) return { ok: false, codigo: "prefixo", tamanho: chave.length };
+  if (chave.length < 35 || chave.length > 45) return { ok: false, codigo: "tamanho", tamanho: chave.length };
+  return { ok: true };
+}
 
 function erroGeminiEhChaveInvalida(err) {
   const msg = String(err?.message ?? err);
@@ -60,3 +78,6 @@ export async function invocarGeminiTexto({ instrucaoSistema, promptUsuario }) {
   return { ok: false, motivo: "modelo_indisponivel" };
 }
 
+export function geminiInsightsDisponivel() {
+  return validarFormatoChaveGemini(resolverChaveGeminiInsights()).ok;
+}

@@ -88,18 +88,17 @@ const DIAS_ANTECEDENCIA_ARRENDAMENTO = 7;
 
 async function sincronizarNotificacoesArrendamento() {
   const hoje = inicioDoDia();
-  // Notifica também parcelas que vencem nos próximos dias, não só as já vencidas.
   const limite = new Date(hoje);
   limite.setDate(limite.getDate() + DIAS_ANTECEDENCIA_ARRENDAMENTO);
 
-  const parcelasPendentes = await prisma.lucros.findMany({
+  const entregasPendentes = await prisma.entregas_arrendamento.findMany({
     where: {
-      origem: "ARRENDAMENTO",
-      status_recebimento: "PENDENTE",
+      status: "PENDENTE",
       data: { lte: limite },
     },
     include: {
       fazendas: { select: { id: true, nome: true } },
+      culturas: { select: { id: true, nome: true } },
     },
   });
 
@@ -110,26 +109,28 @@ async function sincronizarNotificacoesArrendamento() {
 
   if (!admins.length) return;
 
-  if (parcelasPendentes.length) {
+  if (entregasPendentes.length) {
     const payload = [];
     for (const admin of admins) {
-      for (const parcela of parcelasPendentes) {
-        const fazendaNome = parcela.fazendas?.nome ?? "fazenda";
-        const dataStr = formatarDataCurta(parcela.data);
+      for (const entrega of entregasPendentes) {
+        const fazendaNome = entrega.fazendas?.nome ?? "fazenda";
+        const culturaNome = entrega.culturas?.nome ?? "cultura";
+        const qtd = Number(entrega.quantidade_sacas ?? 0);
+        const dataStr = formatarDataCurta(entrega.data);
         payload.push({
           usuario_id: admin.id,
           tipo: "ARRENDAMENTO_RECEBER",
           titulo: `Arrendamento — ${fazendaNome}`,
-          descricao: `Parcela de ${dataStr || "vencimento"}. Abra Lucros e informe se o valor foi recebido.`,
-          rota: `/lucros?fazendaId=${parcela.fazenda_id}&pendenteArrendamento=1`,
-          referencia_id: parcela.id,
+          descricao: `${qtd} sacas de ${culturaNome} previstas para ${dataStr || "entrega"}. Confirme a saída do estoque.`,
+          rota: `/estoque?pendenteArrendamento=1`,
+          referencia_id: entrega.id,
         });
       }
     }
     await notificacaoRepository.criarMuitas(payload);
   }
 
-  const idsPendentes = new Set(parcelasPendentes.map((p) => p.id));
+  const idsPendentes = new Set(entregasPendentes.map((p) => p.id));
 
   const notificacoesAtivas = await prisma.notificacoes.findMany({
     where: { tipo: "ARRENDAMENTO_RECEBER" },
@@ -145,12 +146,12 @@ async function sincronizarNotificacoesArrendamento() {
   }
 }
 
-async function resolverNotificacaoArrendamento(lucroId) {
-  if (!referenciaUuidValida(lucroId)) return;
+async function resolverNotificacaoArrendamento(entregaId) {
+  if (!referenciaUuidValida(entregaId)) return;
   await prisma.notificacoes.deleteMany({
     where: {
       tipo: "ARRENDAMENTO_RECEBER",
-      referencia_id: lucroId,
+      referencia_id: entregaId,
     },
   });
 }

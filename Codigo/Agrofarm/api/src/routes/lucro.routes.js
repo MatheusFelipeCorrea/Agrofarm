@@ -7,7 +7,6 @@ import { idSchema } from '../schemas/common.schema.js'
 import {
     createLucroSchema,
     lucroFiltroSchema,
-    marcarRecebimentoArrendamentoSchema,
     updateLucroSchema,
 } from '../schemas/lucro.schema.js'
 
@@ -22,11 +21,6 @@ router.get('/total', validator({ query: lucroFiltroSchema }), lucroController.ge
 router.get('/colheita/:colheitaId', validator({ params: colheitaIdParamsSchema }), lucroController.getPorColheita)
 router.post('/', validator({ body: createLucroSchema }), lucroController.create)
 router.put('/:id', validator({ params: idSchema, body: updateLucroSchema }), lucroController.update)
-router.patch(
-    '/:id/recebimento-arrendamento',
-    validator({ params: idSchema, body: marcarRecebimentoArrendamentoSchema }),
-    lucroController.marcarRecebimentoArrendamento,
-)
 router.delete('/:id', validator({ params: idSchema }), lucroController.delete)
 
 export { router as lucroRoutes }

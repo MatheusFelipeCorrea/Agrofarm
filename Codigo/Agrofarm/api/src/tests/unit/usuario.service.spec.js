@@ -103,6 +103,7 @@ describe('usuarioService', () => {
             must_change_password: true,
             token_reset: null,
             token_reset_expira: null,
+            token_version: { increment: 1 },
         })
         expect(usuarioRepository.substituirFazendasDoUsuario).not.toHaveBeenCalled()
     })
@@ -126,6 +127,7 @@ describe('usuarioService', () => {
             must_change_password: true,
             token_reset: null,
             token_reset_expira: null,
+            token_version: { increment: 1 },
         })
     })
 })

@@ -25,7 +25,8 @@ describe("schemas extras", () => {
       createFazendaSchema.parse({
         nome: "Arrendada Sul",
         tipo: "ARRENDADA_PARA_TERCEIROS",
-        arrendamentoValor: 12000,
+        arrendamentoCulturaId: uuid,
+        arrendamentoQuantidadeSacas: 500,
         arrendamentoPeriodicidade: "MENSAL",
         arrendamentoDataInicio: "2026-01-10",
       }).arrendamentoPeriodicidade,

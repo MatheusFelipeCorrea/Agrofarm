@@ -9,7 +9,10 @@ export const simulacaoController = {
 				fazendaId: req.query.fazendaId,
 			});
 
-			return res.status(200).json(simulacaoView.renderDividas(resultado));
+			return res.status(200).json({
+				status: "success",
+				data: simulacaoView.renderDividas(resultado),
+			});
 		} catch (error) {
 			next(error);
 		}
@@ -22,7 +25,10 @@ export const simulacaoController = {
 				payload: req.body,
 			});
 
-			return res.status(200).json(simulacaoView.renderCalculo(resultado));
+			return res.status(200).json({
+				status: "success",
+				data: simulacaoView.renderCalculo(resultado),
+			});
 		} catch (error) {
 			next(error);
 		}

@@ -1,19 +1,13 @@
 import { prisma } from "../database/client.js";
 import { valorLucroRegistro } from "../shared/finance/valorLucro.js";
 
-// Arrendamento só entra no total quando efetivamente recebido; parcelas
-// PENDENTE/NAO_RECEBIDO não representam dinheiro em caixa e não podem inflar lucro/saldo.
-const ARRENDAMENTO_REALIZADO = { origem: "ARRENDAMENTO", status_recebimento: "RECEBIDO" };
-
 function whereLucrosFazendas(fazendaIds) {
   if (!Array.isArray(fazendaIds) || fazendaIds.length === 0) {
-    return { colheitas: withFazendaFiltro(fazendaIds) };
+    return { colheitas: withFazendaFiltro(fazendaIds), origem: "VENDA_COLHEITA" };
   }
   return {
-    OR: [
-      { colheitas: withFazendaFiltro(fazendaIds) },
-      { fazenda_id: { in: fazendaIds }, ...ARRENDAMENTO_REALIZADO },
-    ],
+    origem: "VENDA_COLHEITA",
+    colheitas: withFazendaFiltro(fazendaIds),
   };
 }
 
@@ -114,6 +108,18 @@ export const dashboardRepository = {
       },
     });
 
+    const arrendamentos = await prisma.entregas_arrendamento.findMany({
+      where: {
+        status: "ENTREGUE",
+        colheita_id: { not: null },
+        colheitas: withFazendaFiltro(fazendaIds),
+      },
+      select: {
+        quantidade_sacas: true,
+        cultura_id: true,
+      },
+    });
+
     const vendidoPorCultura = new Map();
     for (const venda of vendas) {
       const culturaId = venda.colheitas?.cultura_id;
@@ -121,6 +127,15 @@ export const dashboardRepository = {
       vendidoPorCultura.set(
         culturaId,
         (vendidoPorCultura.get(culturaId) ?? 0) + Number(venda.quantidade_sacas ?? 0),
+      );
+    }
+
+    for (const entrega of arrendamentos) {
+      const culturaId = entrega.cultura_id;
+      if (!culturaId) continue;
+      vendidoPorCultura.set(
+        culturaId,
+        (vendidoPorCultura.get(culturaId) ?? 0) + Number(entrega.quantidade_sacas ?? 0),
       );
     }
 

@@ -8,9 +8,44 @@ import { isCulturaCafe } from '../shared/cultura/culturaStatus.js'
 const ADMIN = 'ADMIN'
 
 /**
+ * Garante registro em colheitas quando o talhão é arquivado com data de colheita.
+ * Vários talhões da mesma cultura na mesma data agregam a área quando a colheita
+ * ainda não teve sacas informadas (origem automática do mapa).
+ */
+async function garantirColheitaDoMapa(poligono) {
+    if (!poligono.cultura_id || !poligono.data_colheita) return null
+
+    const dataColheita = new Date(poligono.data_colheita)
+    const areaTalhao = Number(poligono.area_hectares ?? 0)
+
+    const existente = await poligonoHistoricoRepository.buscarColheitaPorFazendaCulturaData(
+        poligono.fazenda_id,
+        poligono.cultura_id,
+        dataColheita,
+    )
+
+    if (existente) {
+        const sacas = Number(existente.sacas_produzidas ?? 0)
+        if (sacas === 0 && areaTalhao > 0) {
+            const novaArea = Number(existente.area ?? 0) + areaTalhao
+            return poligonoHistoricoRepository.atualizarAreaColheita(existente.id, novaArea)
+        }
+        return existente
+    }
+
+    return poligonoHistoricoRepository.criarColheitaDoMapa({
+        fazenda_id: poligono.fazenda_id,
+        cultura_id: poligono.cultura_id,
+        data_colheita: dataColheita,
+        ano: dataColheita.getFullYear(),
+        area: areaTalhao,
+    })
+}
+
+/**
  * Define o status do registro de histórico e tenta vincular a colheita/safra
- * correspondente. A data de colheita do próprio talhão tem prioridade sobre a
- * data registrada na tabela de colheitas.
+ * correspondente. Com data de colheita no talhão, cria ou reutiliza o registro
+ * em colheitas para alimentar a tela de colheitas e o dashboard.
  */
 async function resolverContextoArquivamento(poligono) {
     let status = 'ARQUIVADA'
@@ -18,10 +53,17 @@ async function resolverContextoArquivamento(poligono) {
     let data_colheita = poligono.data_colheita ?? null
 
     if (poligono.cultura_id) {
-        const colheita = await poligonoHistoricoRepository.buscarUltimaColheita(
-            poligono.fazenda_id,
-            poligono.cultura_id,
-        )
+        let colheita = null
+
+        if (data_colheita) {
+            colheita = await garantirColheitaDoMapa(poligono)
+        } else {
+            colheita = await poligonoHistoricoRepository.buscarUltimaColheita(
+                poligono.fazenda_id,
+                poligono.cultura_id,
+            )
+        }
+
         if (colheita) {
             status = 'COLHIDA'
             colheita_id = colheita.id

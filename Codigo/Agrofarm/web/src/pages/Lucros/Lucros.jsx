@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore.js";
 import { notify } from "../../lib/notify.js";
 import { getApiErrorMessage } from "../../utils/apiError.js";
@@ -17,7 +16,6 @@ import {
   useLucroListQuery,
   useLucroTotalQuery,
   useUpdateLucroMutation,
-  useMarcarRecebimentoArrendamentoMutation,
 } from "../../queries/lucro/useLucroQueries.js";
 import LucroTable from "../../components/lucros/LucroTable.jsx";
 import LucroFormModal from "../../components/lucros/LucroFormModal.jsx";
@@ -40,7 +38,6 @@ const SELECT_CLS =
   "h-10 w-full cursor-pointer appearance-none rounded-lg border border-gray-200 bg-white py-2 pl-3 pr-9 text-sm text-gray-700 shadow-sm transition-colors hover:border-gray-300 focus:border-[#2e5b47] focus:outline-none focus:ring-2 focus:ring-[#2e5b47]/20";
 
 export default function Lucros() {
-  const [searchParams] = useSearchParams();
   const usuario = useAuthStore((s) => s.usuario);
   const isAdmin = usuario?.role === "ADMIN";
 
@@ -77,7 +74,6 @@ export default function Lucros() {
   const [edicaoId, setEdicaoId] = useState(null);
   const [edicaoForm, setEdicaoForm] = useState(emptyLucroForm);
   const [lucroParaExcluir, setLucroParaExcluir] = useState(null);
-  const [recebimentoBusyId, setRecebimentoBusyId] = useState(null);
 
   const [page, setPage] = useState(1);
 
@@ -113,23 +109,10 @@ export default function Lucros() {
   const createMutation = useCreateLucroMutation();
   const updateMutation = useUpdateLucroMutation();
   const deleteMutation = useDeleteLucroMutation();
-  const recebimentoMutation = useMarcarRecebimentoArrendamentoMutation();
 
   const items = lucroListData?.items ?? [];
   const meta = lucroListData?.meta ?? { page: 1, pageSize: 5, totalPages: 1, totalItems: 0 };
   const totalLucro = totalData?.totalLucro ?? 0;
-  const totalPendenteArrendamento = totalData?.totalPendenteArrendamento ?? 0;
-
-  const focoArrendamento = searchParams.get("pendenteArrendamento") === "1";
-  const fazendaIdNotificacao = searchParams.get("fazendaId");
-
-  useEffect(() => {
-    if (!fazendaIdNotificacao || !isAdmin) return;
-    setDraftFilters((prev) => ({ ...prev, fazendaId: fazendaIdNotificacao }));
-    setAppliedFilters((prev) => ({ ...prev, fazendaId: fazendaIdNotificacao }));
-    setFiltersDirty(false);
-    setPage(1);
-  }, [fazendaIdNotificacao, isAdmin]);
 
   useEffect(() => {
     if (!lucrosListaErro || !erroListaLucros) return;
@@ -319,17 +302,6 @@ export default function Lucros() {
     }
   }
 
-  async function handleMarcarRecebimento(id, status) {
-    setRecebimentoBusyId(id);
-    try {
-      await recebimentoMutation.mutateAsync({ id, status });
-    } catch {
-      /* toast via mutation */
-    } finally {
-      setRecebimentoBusyId(null);
-    }
-  }
-
   function handleEditar(row) {
     setEdicaoId(row.id);
     setEdicaoForm({
@@ -406,17 +378,6 @@ export default function Lucros() {
           <p className="text-[0.95rem] text-gray-500">Acompanhe o desempenho financeiro das suas colheitas.</p>
         </header>
 
-        {focoArrendamento && isAdmin ? (
-          <div className="rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 text-sm text-violet-900">
-            <p className="font-semibold">Confirme o recebimento do arrendamento</p>
-            <p className="mt-1 text-violet-800/90">
-              A fazenda já está filtrada abaixo. Nas linhas de arrendamento pendentes, use os botões para marcar
-              se o valor foi recebido ou não. A notificação só some depois dessa confirmação.
-            </p>
-          </div>
-        ) : null}
-
-        {/* ── Barra de Filtros ── */}
         <section className="flex flex-wrap items-end gap-3">
           {isAdmin ? (
             <div className="flex min-w-[11.25rem] flex-1 flex-col gap-1.5">
@@ -466,7 +427,6 @@ export default function Lucros() {
             />
           </div>
 
-          {/* Botão único de ação dos filtros */}
           <button
             type="button"
             className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#2e5b47] px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#254a3a] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2e5b47] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
@@ -487,24 +447,12 @@ export default function Lucros() {
           </button>
         </section>
 
-        {/* ── Card Total de Lucro ── */}
-        <LucroTotalCard total={totalLucro} pendenteArrendamento={totalPendenteArrendamento} />
+        <LucroTotalCard total={totalLucro} />
 
-        {isAdmin && totalPendenteArrendamento > 0 ? (
-          <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Há {totalPendenteArrendamento.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} em parcelas de
-            arrendamento pendentes de confirmação. Marque <strong>Recebido</strong> ou <strong>Não recebido</strong> na tabela.
-          </p>
-        ) : null}
-
-        {/* ── Tabela de Lucros ── */}
         <LucroTable
           items={items}
           onEdit={handleEditar}
           onDelete={(row) => setLucroParaExcluir(row)}
-          onMarcarRecebimento={handleMarcarRecebimento}
-          isAdmin={isAdmin}
-          recebimentoBusyId={recebimentoBusyId}
           loading={lucrosLoading}
           meta={meta}
           onPageChange={setPage}

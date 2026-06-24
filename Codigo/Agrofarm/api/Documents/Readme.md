@@ -1,1112 +1,586 @@
-# ⚙️ API — Backend
+# API — Documentação Técnica
 
-Servidor HTTP construído com **Node.js + Express** seguindo o padrão **MVC**
-com camadas extras de **Service** e **Repository** para separação de
-responsabilidades.
+Servidor HTTP do AgroFarm construído com **Node.js + Express**, organizado em camadas **Controller → Service → Repository → Prisma**, com validação **Zod** e formatação de respostas via **Views**.
 
 ---
 
-## 🗂️ Índice
+## Índice
 
-- [Tecnologias](#-tecnologias)
-- [Estrutura de Pastas](#-estrutura-de-pastas)
-- [Descrição das Camadas](#-descrição-das-camadas)
-- [Fluxo de uma Requisição](#-fluxo-de-uma-requisição)
-- [Rotas da API](#-rotas-da-api)
-- [Regras de Negócio](#-regras-de-negócio)
-- [Como Rodar](#-como-rodar)
-- [Variáveis de Ambiente](#-variáveis-de-ambiente)
-- [Padrão de Erros](#-padrão-de-erros)
-
----
-
-## 🛠️ Tecnologias
-
-| Tecnologia    | Uso |
-|---------------|-----|
-| Node.js       | Runtime |
-| Express       | Framework HTTP |
-| Prisma 5      | ORM / Banco de dados |
-| PostgreSQL    | Banco de dados (Neon) |
-| Zod           | Validação de dados |
-| JWT           | Autenticação |
-| Bcrypt        | Criptografia de senhas |
-| Pino          | Logs |
-| node-cron     | Agendamento de lembretes |
-| Google Gemini | Inteligência Artificial |
-| Evolution API | Envio de mensagens WhatsApp |
-| Vitest        | Testes |
+- [Tecnologias](#tecnologias)
+- [Estrutura de pastas](#estrutura-de-pastas)
+- [Camadas da aplicação](#camadas-da-aplicação)
+- [Fluxo de uma requisição](#fluxo-de-uma-requisição)
+- [Modelo de dados](#modelo-de-dados)
+- [Rotas da API](#rotas-da-api)
+- [Regras de negócio](#regras-de-negócio)
+- [Jobs agendados](#jobs-agendados)
+- [Integrações externas](#integrações-externas)
+- [Autenticação e autorização](#autenticação-e-autorização)
+- [Padrão de erros](#padrão-de-erros)
+- [Testes](#testes)
+- [Como rodar](#como-rodar)
+- [Variáveis de ambiente](#variáveis-de-ambiente)
 
 ---
 
-## 📁 Estrutura de Pastas
+## Tecnologias
+
+| Tecnologia | Versão / Uso |
+| ---------- | ------------ |
+| Node.js | Runtime (20+) |
+| Express | Framework HTTP |
+| Prisma 5 | ORM — PostgreSQL |
+| PostgreSQL + PostGIS | Banco (Neon) — geometrias de talhões |
+| Zod | Validação de entrada |
+| JWT | Autenticação stateless |
+| Bcrypt | Hash de senhas |
+| Pino | Logging estruturado |
+| node-cron | Jobs (lembretes, cotações) |
+| Google Gemini | Chat IA e insights |
+| Evolution API | WhatsApp |
+| Resend / Nodemailer | E-mail (recuperação de senha) |
+| @turf/turf | Cálculos geoespaciais |
+| Vitest | Testes |
+
+---
+
+## Estrutura de pastas
 
 ```text
 Agrofarm/api/
-├── 📄 package.json
-├── 📄 .env
-├── 📄 .env.example
-├── 📄 .gitignore
-│
-├── 📁 prisma/
-│   ├── 📄 schema.prisma
-│   └── 📁 migrations/
-│
-└── 📁 src/
-   ├── 📄 server.js
-   ├── 📄 app.js
-   │
-   ├── 📁 models/
-   │   ├── 📄 Fazenda.js
-   │   ├── 📄 Cultura.js
-   │   ├── 📄 Colheita.js
-   │   ├── 📄 Gasto.js
-   │   ├── 📄 Lucro.js
-   │   ├── 📄 Lembrete.js
-   │   ├── 📄 Insumo.js
-   │   └── 📄 Cotacao.js
-   │
-   ├── 📁 views/
-   │   ├── 📄 fazenda.view.js
-   │   ├── 📄 cultura.view.js
-   │   ├── 📄 colheita.view.js
-   │   ├── 📄 gasto.view.js
-   │   ├── 📄 lucro.view.js
-   │   ├── 📄 lembrete.view.js
-   │   ├── 📄 insumo.view.js
-   │   ├── 📄 estoque.view.js
-   │   ├── 📄 cotacao.view.js
-   │   └── 📄 simulacao.view.js
-   │
-   ├── 📁 controllers/
-   │   ├── 📄 auth.controller.js
-   │   ├── 📄 fazenda.controller.js
-   │   ├── 📄 cultura.controller.js
-   │   ├── 📄 colheita.controller.js
-   │   ├── 📄 gasto.controller.js
-   │   ├── 📄 lucro.controller.js
-   │   ├── 📄 lembrete.controller.js
-   │   ├── 📄 insumo.controller.js
-   │   ├── 📄 estoque.controller.js
-   │   ├── 📄 cotacao.controller.js
-   │   ├── 📄 simulacao.controller.js
-   │   └── 📄 ia.controller.js
-   │
-   ├── 📁 services/
-   │   ├── 📄 auth.service.js
-   │   ├── 📄 fazenda.service.js
-   │   ├── 📄 cultura.service.js
-   │   ├── 📄 colheita.service.js
-   │   ├── 📄 gasto.service.js
-   │   ├── 📄 lucro.service.js
-   │   ├── 📄 lembrete.service.js
-   │   ├── 📄 insumo.service.js
-   │   ├── 📄 estoque.service.js
-   │   ├── 📄 cotacao.service.js
-   │   ├── 📄 simulacao.service.js
-   │   ├── 📄 whatsapp.service.js
-   │   └── 📄 ia.service.js
-   │
-   ├── 📁 repositories/
-   │   ├── 📄 auth.repository.js
-   │   ├── 📄 fazenda.repository.js
-   │   ├── 📄 cultura.repository.js
-   │   ├── 📄 colheita.repository.js
-   │   ├── 📄 gasto.repository.js
-   │   ├── 📄 lucro.repository.js
-   │   ├── 📄 lembrete.repository.js
-   │   ├── 📄 insumo.repository.js
-   │   └── 📄 estoque.repository.js
-   │
-   ├── 📁 routes/
-   │   ├── 📄 auth.routes.js
-   │   ├── 📄 fazenda.routes.js
-   │   ├── 📄 cultura.routes.js
-   │   ├── 📄 colheita.routes.js
-   │   ├── 📄 gasto.routes.js
-   │   ├── 📄 lucro.routes.js
-   │   ├── 📄 lembrete.routes.js
-   │   ├── 📄 insumo.routes.js
-   │   ├── 📄 estoque.routes.js
-   │   ├── 📄 cotacao.routes.js
-   │   ├── 📄 simulacao.routes.js
-   │   ├── 📄 ia.routes.js
-   │   └── 📄 index.js
-   │
-   ├── 📁 middlewares/
-   │   ├── 📄 auth.middleware.js
-   │   ├── 📄 error.middleware.js
-   │   ├── 📄 limitador.middleware.js
-   │   ├── 📄 validator.middleware.js
-   │   └── 📄 logger.middleware.js
-   │
-   ├── 📁 schemas/
-   │   ├── 📄 auth.schema.js
-   │   ├── 📄 fazenda.schema.js
-   │   ├── 📄 cultura.schema.js
-   │   ├── 📄 colheita.schema.js
-   │   ├── 📄 gasto.schema.js
-   │   ├── 📄 lucro.schema.js
-   │   ├── 📄 lembrete.schema.js
-   │   ├── 📄 insumo.schema.js
-   │   └── 📄 simulacao.schema.js
-   │
-   ├── 📁 jobs/
-   │   └── 📄 lembretes.job.js
-   │
-   ├── 📁 config/
-   │   ├── 📄 env.js
-   │   ├── 📄 cors.js
-   │   └── 📄 index.js
-   │
-   ├── 📁 database/
-   │   ├── 📄 client.js
-   │   └── 📁 seeds/
-   │       └── 📄 admin.seed.js
-   │
-   ├── 📁 shared/
-   │   ├── 📁 errors/
-   │   │   ├── 📄 AppError.js
-   │   │   └── 📄 index.js
-   │   └── 📁 utils/
-   │       ├── 📄 logger.js
-   │       ├── 📄 jwt.js
-   │       └── 📄 bcrypt.js
-   │
-   └── 📁 tests/
-       ├── 📄 setup.js
-       ├── 📁 unit/
-       │   ├── 📄 fazenda.service.spec.js
-       │   ├── 📄 colheita.service.spec.js
-       │   ├── 📄 gasto.service.spec.js
-       │   ├── 📄 lucro.service.spec.js
-       │   ├── 📄 lembrete.service.spec.js
-       │   └── 📄 simulacao.service.spec.js
-       └── 📁 integration/
-           ├── 📄 fazenda.spec.js
-           ├── 📄 colheita.spec.js
-           ├── 📄 gasto.spec.js
-           └── 📄 lucro.spec.js
+├── prisma/
+│   └── schema.prisma          # Modelo de dados (fonte da verdade)
+├── src/
+│   ├── server.js              # Entrada — sobe HTTP + jobs
+│   ├── app.js                 # Express — middlewares + rotas
+│   ├── config/                # env, cors
+│   ├── database/
+│   │   ├── client.js          # PrismaClient singleton
+│   │   └── seeds/             # admin, demo, mega-demo
+│   ├── routes/                # Definição de URLs
+│   ├── controllers/           # req/res — orquestra services
+│   ├── services/              # Regras de negócio
+│   ├── repositories/          # Queries Prisma
+│   ├── views/                 # Formatação de respostas JSON
+│   ├── schemas/               # Schemas Zod por domínio
+│   ├── middlewares/           # auth, validator, error, logger, rate-limit
+│   ├── jobs/                  # Cron (lembretes, cotação)
+│   ├── shared/
+│   │   ├── errors/            # AppError
+│   │   ├── navigation/        # menu.config.js
+│   │   ├── cultura/           # status, hectares de talhões
+│   │   ├── estoque/           # saldo de sacas
+│   │   └── utils/             # jwt, bcrypt, logger, email
+│   ├── utils/                 # lembrete.recorrencia, lembrete.utils
+│   └── tests/
+│       ├── unit/
+│       └── integration/
+├── scripts/                   # evolution-cli, test-gemini-key
+├── docker-compose.evolution.yml
+├── .env.example
+└── package.json
 ```
 
----
-
-## 📖 Descrição das Camadas
+> Não há pasta `models/` — o schema Prisma define a estrutura de dados.
 
 ---
 
-### 📄 `server.js`
-> Ponto de entrada da aplicação
+## Camadas da aplicação
+
+### `server.js`
+- Importa `app.js`, sobe na porta configurada.
+- Inicializa jobs (`lembretes.job.js`, `cotacao-update.job.js`, `cotacao-cleanup.job.js`).
+
+### `app.js`
+- Middlewares globais: Helmet, CORS, JSON parser, logger.
+- Monta rotas em `/api` via `routes/index.js`.
+- `error.middleware.js` registrado por último.
+
+### Controllers
+Recebem `req`/`res`, delegam ao service e retornam via view. Erros propagados com `next(error)`.
+
+| Controller | Responsabilidade |
+| ---------- | -------------- |
+| `auth.controller` | Login, cadastro, logout, me, recuperação de senha |
+| `usuario.controller` | CRUD de usuários |
+| `fazenda.controller` | CRUD de fazendas + detalhe/KPIs |
+| `fazendaCultura.controller` | Vínculo cultura ↔ fazenda |
+| `poligono.controller` | Talhões no mapa |
+| `poligonoHistorico.controller` | Histórico/arquivamento de áreas |
+| `cultura.controller` | Catálogo global |
+| `colheita.controller` | Colheitas por safra |
+| `gasto.controller` | Gastos operacionais |
+| `lucro.controller` | Vendas e arrendamento |
+| `estoque.controller` | Saldo e entregas de arrendamento |
+| `insumo.controller` | Insumos/atividades |
+| `lembrete.controller` | Lembretes, calendário, WhatsApp |
+| `dashboard.controller` | KPIs consolidados |
+| `cotacao.controller` | Dólar, euro, mercado |
+| `simulacao.controller` | Simulação fiscal e histórico |
+| `insights.controller` | Snapshots de IA |
+| `chatbot.controller` | Sessões e mensagens do chat |
+| `notificacao.controller` | Notificações in-app |
+| `noticia.controller` | Feed RSS agro |
+
+### Services
+Concentram **regras de negócio**. Lançam `AppError` quando uma regra é violada.
+
+Exemplos relevantes:
+- **`fazendaCultura.service`** — exige talhão mapeado antes de vincular cultura; hectares calculados dos polígonos.
+- **`lucro.service`** — valida estoque disponível antes de registrar venda.
+- **`gasto.service`** — vincula gasto a colheita existente; gerencia status PAGO/PENDENTE.
+- **`lembrete.service`** — recorrência, envio WhatsApp, status automático.
+- **`simulacao.service`** — cálculo de abatimento com taxas IBPT, câmbio e corretagem.
+- **`geometry.service`** — área de polígonos via Turf/PostGIS.
+- **`chatbot.service`** — contexto da fazenda + Gemini para respostas naturais.
+
+### Repositories
+Única camada com acesso direto ao Prisma. Queries isoladas por domínio.
+
+### Views
+Formatam entidades para JSON de resposta — removem campos sensíveis e padronizam nomes (`camelCase`).
+
+### Schemas (Zod)
+Validam `body`, `query` e `params` via `validator.middleware.js`. Retornam 400 com mensagens claras.
+
+### Middlewares
+
+| Middleware | Função |
+| ---------- | ------ |
+| `auth.middleware` | Valida JWT, anexa `req.usuario` |
+| `authorize(role)` | Restringe por papel (ex.: ADMIN) |
+| `validator.middleware` | Valida com schema Zod |
+| `error.middleware` | Captura erros, retorna JSON padronizado |
+| `logger.middleware` | Log de requisições |
+| `limitador.middleware` | Rate limiting (login) |
+
+---
+
+## Fluxo de uma requisição
 
 ```text
-→ Importa o app.js
-→ Sobe o servidor na porta definida no .env
-→ Inicia o cron job de lembretes
-→ Loga confirmação no console
+Cliente HTTP
+     │
+     ▼
+routes/index.js  →  rota específica
+     │
+     ▼
+auth.middleware  →  JWT válido?
+validator        →  body/query válidos?
+     │
+     ▼
+controller       →  chama service
+     │
+     ▼
+service          →  regra de negócio
+     │
+     ▼
+repository       →  Prisma → PostgreSQL
+     │
+     ▼
+view             →  formata JSON
+     │
+     ▼
+res.json({ status: "success", data: ... })
+
+── Em caso de erro ──
+service lança AppError → controller next(error) → error.middleware → 4xx/5xx
 ```
 
 ---
 
-### 📄 `app.js`
-> Configura e monta o Express
+## Modelo de dados
 
-```text
-→ Registra middlewares globais (helmet, cors, json)
-→ Registra todas as rotas com prefixo /api
-→ Registra o error.middleware (sempre por último)
-```
+Definido em `prisma/schema.prisma`. Entidades principais:
 
----
+| Entidade | Descrição |
+| -------- | --------- |
+| `usuarios` | Usuários com role ADMIN/FUNCIONARIO |
+| `usuarios_fazendas` | Vínculo N:N usuário ↔ fazenda |
+| `fazendas` | Propriedades (própria, arrendada de/para terceiros) |
+| `fazenda_culturas` | Cultura vinculada à fazenda + status operacional |
+| `culturas` | Catálogo global (nome, cor, hectares) |
+| `poligonos_fazenda` | Talhões georreferenciados (PostGIS) |
+| `poligonos_fazenda_historico` | Áreas arquivadas após colheita |
+| `colheitas` | Safras (fazenda, cultura, área, sacas, ano) |
+| `gastos` | Despesas vinculadas a colheita |
+| `lucros` | Vendas (colheita) ou arrendamento |
+| `entregas_arrendamento` | Entregas de sacas em contratos de arrendamento |
+| `insumos_atividades` | Registro de insumos por funcionário |
+| `lembretes` | Lembretes com recorrência e WhatsApp |
+| `notificacoes` | Alertas in-app |
+| `cotacoes` | Cache de cotações USD/EUR |
+| `simulacoes` | Histórico de simulações salvas |
+| `insight_snapshots` | Cache de insights Gemini |
+| `chat_sessoes` / `chat_mensagens` | Histórico do chat IA |
 
-### 📁 `models/` — M do MVC
-> Define a **estrutura dos dados** da aplicação
+### Enums relevantes
 
-```text
-Fazenda.js
- → id, nome
- → tipo: PROPRIA | ARRENDADA_DE_TERCEIROS | ARRENDADA_PARA_TERCEIROS
- → localizacao, criadoEm, atualizadoEm
-
-Cultura.js
- → id, nome, cor (gerada automaticamente), criadoEm
-
-Colheita.js
- → id, fazendaId (FK → fazendas)
- → culturaId (FK → culturas)
- → area (hectares), sacasProduzidas, ano
- → dataColheita, criadoEm, atualizadoEm
-
-Gasto.js
- → id, colheitaId (FK → colheitas)
- → tipo (VARCHAR — texto livre)
- → tipoPersonalizado (preenchido quando tipo = "Outro")
- → valor, dataVencimento (opcional)
- → status: PAGO | PENDENTE
- → descricao, data, criadoEm, atualizadoEm
-
-Lucro.js
- → id, colheitaId (FK → colheitas)
- → quantidadeSacas, valorUnitario
- → comprador, data, criadoEm
-
-Lembrete.js
- → id, usuarioId (FK → usuarios)
- → fazendaId (FK → fazendas, opcional)
- → titulo, descricao, dataLembrete
- → telefoneWhatsapp, status, criadoEm
-
-Insumo.js
- → id, funcionarioId (FK → usuarios)
- → fazendaId (FK → fazendas)
- → item, quantidade, observacoes, data, criadoEm
-
-Cotacao.js
- → id, valor, fonte, atualizadoEm
-
-✅ Define a "forma" dos dados da aplicação
-✅ Complementa o schema do Prisma
-❌ Sem regra de negócio
-❌ Sem acesso direto ao banco
-```
+| Enum | Valores |
+| ---- | ------- |
+| `role` | ADMIN, FUNCIONARIO |
+| `tipo_fazenda` | PROPRIA, ARRENDADA_DE_TERCEIROS, ARRENDADA_PARA_TERCEIROS |
+| `status_gasto` | PAGO, PENDENTE |
+| `status_lembrete` | PENDENTE, ENVIADO, CANCELADO |
+| `status_cultura` | PLANTIO, ADUBACAO, PULVERIZACAO, COLHEITA, SECAGEM |
+| `recorrencia_lembrete` | NENHUMA, SEMANAL, MENSAL, TRIMESTRAL, ANUAL, OUTROS |
+| `origem_lucro` | VENDA_COLHEITA, ARRENDAMENTO |
 
 ---
 
-### 📁 `views/` — V do MVC
-> **Formata o JSON** de resposta — controla o que é exposto ao frontend
+## Rotas da API
 
-```text
-fazenda.view.js
- → render(fazenda)       → formata um único registro
- → renderMany(fazendas)  → formata uma lista
+Prefixo base: **`/api`**. Autenticação via `Authorization: Bearer <token>` salvo indicação contrária.
 
-cultura.view.js
- → render(cultura)
- → renderMany(culturas)
+### Saúde
 
-colheita.view.js
- → render(colheita)
- → renderMany(colheitas)
+| Método | Rota |
+| ------ | ---- |
+| GET | `/health` |
 
-gasto.view.js
- → render(gasto)
- → renderMany(gastos)
+### Autenticação — `/auth`
 
-lucro.view.js
- → render(lucro)
- → renderMany(lucros)
+| Método | Rota | Auth |
+| ------ | ---- | ---- |
+| POST | `/login` | — |
+| POST | `/cadastro` | — |
+| POST | `/logout` | — |
+| POST | `/esqueci-senha` | — |
+| POST | `/redefinir-senha` | — |
+| GET | `/me` | JWT |
 
-lembrete.view.js
- → render(lembrete)
- → renderMany(lembretes)
+### Usuários — `/usuarios` (ADMIN)
 
-insumo.view.js
- → render(insumo)
- → renderMany(insumos)
+| Método | Rota |
+| ------ | ---- |
+| GET | `/` |
+| GET | `/:id` |
+| PUT | `/:id` |
+| DELETE | `/:id` |
 
-estoque.view.js
- → render(estoque)       → saldo de sacas disponíveis
+### Fazendas — `/fazendas`
 
-cotacao.view.js
- → render(cotacao)       → valor do dólar e horário de atualização
+| Método | Rota | Auth |
+| ------ | ---- | ---- |
+| GET | `/` | JWT |
+| GET | `/:id` | JWT |
+| GET | `/:id/detalhe` | JWT |
+| POST | `/` | ADMIN |
+| PUT | `/:id` | ADMIN |
+| DELETE | `/:id` | ADMIN |
+| GET | `/:fazendaId/culturas` | JWT |
+| POST | `/:fazendaId/culturas` | JWT |
+| PUT | `/:fazendaId/culturas/:id` | JWT |
+| DELETE | `/:fazendaId/culturas/:id` | JWT |
+| GET | `/:fazendaId/historico-mapa` | JWT |
+| GET | `/:fazendaId/historico-mapa/:historicoId` | JWT |
+| POST | `/:fazendaId/historico-mapa/:historicoId/restaurar` | JWT |
 
-simulacao.view.js
- → render(simulacao)     → resultado do cálculo de abatimento
+### Culturas — `/culturas`
 
-✅ Padroniza o formato de todas as respostas
-✅ Remove campos sensíveis antes de responder
-❌ Nunca expõe dados internos desnecessários
-```
+| Método | Rota | Auth |
+| ------ | ---- | ---- |
+| GET | `/` | JWT |
+| POST | `/` | ADMIN |
+| PUT | `/:id` | ADMIN |
+| DELETE | `/:id` | ADMIN |
 
----
+### Polígonos — `/poligonos`
 
-### 📁 `controllers/` — C do MVC
-> **Recebe a requisição**, chama o service e **retorna a resposta**
+| Método | Rota |
+| ------ | ---- |
+| GET | `/` (query: `fazendaId`) |
+| GET | `/:id` |
+| POST | `/` |
+| PUT | `/:id` |
+| DELETE | `/:id` |
+| POST | `/exportar` |
+| POST | `/importar` |
 
-```text
-auth.controller.js
- → login    POST  /api/auth/login
- → cadastro POST  /api/auth/cadastro
- → logout   POST  /api/auth/logout
+### Colheitas — `/colheitas`
 
-fazenda.controller.js
- → getAll       GET    /api/fazendas
- → getPorId     GET    /api/fazendas/:id
- → create       POST   /api/fazendas
- → update       PUT    /api/fazendas/:id
- → delete       DELETE /api/fazendas/:id
+| Método | Rota |
+| ------ | ---- |
+| GET | `/` |
+| GET | `/fazenda/:fazendaId` |
+| GET | `/:id` |
+| POST | `/` |
+| PUT | `/:id` |
+| DELETE | `/:id` |
 
-cultura.controller.js
- → getAll   GET    /api/culturas
- → create   POST   /api/culturas
- → update   PUT    /api/culturas/:id
- → delete   DELETE /api/culturas/:id
+### Gastos — `/gastos`
 
-colheita.controller.js
- → getAll         GET    /api/colheitas
- → getPorId       GET    /api/colheitas/:id
- → getPorFazenda  GET    /api/colheitas/fazenda/:fazendaId
- → create         POST   /api/colheitas
- → update         PUT    /api/colheitas/:id
- → delete         DELETE /api/colheitas/:id
+| Método | Rota |
+| ------ | ---- |
+| GET | `/` |
+| GET | `/resumo` |
+| GET | `/colheita/:colheitaId` |
+| POST | `/` |
+| PUT | `/:id` |
+| DELETE | `/:id` |
 
-gasto.controller.js
- → getAll          GET    /api/gastos
- → getPorColheita  GET    /api/gastos/colheita/:colheitaId
- → create          POST   /api/gastos
- → update          PUT    /api/gastos/:id
- → delete          DELETE /api/gastos/:id
+### Lucros — `/lucros`
 
-lucro.controller.js
- → getAll          GET    /api/lucros
- → getPorColheita  GET    /api/lucros/colheita/:colheitaId
- → create          POST   /api/lucros
- → update          PUT    /api/lucros/:id
- → delete          DELETE /api/lucros/:id
+| Método | Rota |
+| ------ | ---- |
+| GET | `/` |
+| GET | `/total` |
+| GET | `/colheita/:colheitaId` |
+| POST | `/` |
+| PUT | `/:id` |
+| DELETE | `/:id` |
 
-lembrete.controller.js
- → getAll    GET    /api/lembretes
- → getPorId  GET    /api/lembretes/:id
- → create    POST   /api/lembretes
- → update    PUT    /api/lembretes/:id
- → delete    DELETE /api/lembretes/:id
+### Estoque — `/estoque`
 
-insumo.controller.js
- → getAll        GET    /api/insumos
- → getPorFazenda GET    /api/insumos/fazenda/:fazendaId
- → create        POST   /api/insumos
- → delete        DELETE /api/insumos/:id
+| Método | Rota |
+| ------ | ---- |
+| GET | `/` |
+| GET | `/resumo` |
+| GET | `/colheita/:colheitaId` |
+| GET | `/arrendamentos-pendentes` |
+| PATCH | `/arrendamento/:entregaId/confirmar` |
+| PATCH | `/arrendamento/:entregaId/status` |
 
-estoque.controller.js
- → getAll         GET    /api/estoque
- → getPorColheita GET    /api/estoque/colheita/:colheitaId
+### Insumos — `/insumos`
 
-cotacao.controller.js
- → getDolar       GET    /api/cotacao/dolar
+| Método | Rota |
+| ------ | ---- |
+| GET | `/` |
+| POST | `/` |
+| PUT | `/:id` |
+| DELETE | `/:id` |
 
-simulacao.controller.js
- → calcularAbatimento GET  /api/simulacao/dividas
- → calcularSacas      POST /api/simulacao/calcular-sacas
+### Lembretes — `/lembretes`
 
-ia.controller.js
- → gerarInsights  GET  /api/ia/insights
- → chat           POST /api/ia/chat
+| Método | Rota | Auth |
+| ------ | ---- | ---- |
+| GET | `/` | JWT |
+| GET | `/dia?data=YYYY-MM-DD` | JWT |
+| GET | `/calendario?mes=&ano=` | JWT |
+| GET | `/whatsapp/status` | — |
+| POST | `/whatsapp/provisionar` | — |
+| GET | `/:id` | JWT |
+| POST | `/` | JWT |
+| PUT | `/:id` | JWT |
+| PATCH | `/:id/status` | JWT |
+| DELETE | `/:id` | JWT |
+| DELETE | `/` | JWT |
+| POST | `/:id/enviar` | JWT |
 
-✅ Recebe req e res
-✅ Chama o service correto
-✅ Retorna resposta usando a view
-✅ Erros sempre com try/catch → next(error)
-❌ Sem regra de negócio
-❌ Sem acesso direto ao banco
-```
+### Dashboard — `/dashboard`
 
----
+| Método | Rota | Query |
+| ------ | ---- | ----- |
+| GET | `/` | `fazendaId` (uuid ou `todas`) |
 
-### 📁 `services/`
-> **Regras de negócio** — coração da aplicação
+### Cotação — `/cotacao`
 
-```text
-fazenda.service.js
- → Valida tipo obrigatório:
-    PROPRIA | ARRENDADA_DE_TERCEIROS | ARRENDADA_PARA_TERCEIROS
- → Bloqueia exclusão se tiver colheitas vinculadas
+| Método | Rota |
+| ------ | ---- |
+| GET | `/dolar` |
+| GET | `/euro` |
+| GET | `/mercado` |
 
-cultura.service.js
- → Valida nome único antes de criar
- → Gera cor automaticamente baseada no nome
- → Bloqueia exclusão se tiver colheitas vinculadas
+### Simulação — `/simulacao`
 
-colheita.service.js
- → Valida se fazenda existe antes de criar
- → Valida se cultura existe (via culturaId)
+| Método | Rota |
+| ------ | ---- |
+| GET | `/dividas` |
+| GET | `/historico` |
+| POST | `/calcular-sacas` |
+| POST | `/salvar` |
+| DELETE | `/:id` |
 
-gasto.service.js
- → Valida se colheita existe antes de criar
- → Gerencia status (PAGO | PENDENTE)
- → Aceita tipo como texto livre (VARCHAR)
- → Valida tipoPersonalizado quando tipo = "Outro"
- → Valida dataVencimento (opcional)
+### IA / Insights — `/ia`
 
-lucro.service.js
- → Valida se colheita existe
- → Verifica estoque antes de registrar lucro
+| Método | Rota |
+| ------ | ---- |
+| GET | `/insights` |
+| POST | `/insights/refresh` |
 
-lembrete.service.js
- → Cria e atualiza lembretes
- → Gerencia status (PENDENTE | ENVIADO | CANCELADO)
+### Chatbot — `/chatbot`
 
-whatsapp.service.js
- → Conecta com Evolution API via axios
- → Envia mensagem de lembrete no WhatsApp
+| Método | Rota |
+| ------ | ---- |
+| GET | `/resumo` |
+| GET | `/consultas-factuais` |
+| GET | `/sessoes` |
+| GET | `/sessoes/:id/mensagens` |
+| PATCH | `/sessoes/:id` |
+| DELETE | `/sessoes/:id` |
+| POST | `/mensagens` |
 
-ia.service.js
- → gerarInsights: busca dados do banco, monta
-   prompt estruturado e chama Google Gemini
- → chat: recebe pergunta do usuário, busca dados
-   relevantes e retorna resposta em linguagem
-   natural via Google Gemini (RF14)
+### Notificações — `/notificacoes`
 
-insumo.service.js
- → Valida se fazenda e funcionário existem
- → Registra uso de insumos pelo funcionário
+| Método | Rota |
+| ------ | ---- |
+| GET | `/` |
+| PATCH | `/lidas` |
+| PATCH | `/:id/lida` |
 
-estoque.service.js
- → Calcula: sacas_produzidas - sacas_vendidas
+### Notícias — `/noticias`
 
-cotacao.service.js
- → Verifica se existe cache válido
- → Busca na API externa se cache estiver vencido
- → Salva novo valor no cache com timestamp
-
-simulacao.service.js
- → Busca total de gastos (PAGO + PENDENTE)
- → Calcula sacas necessárias para abater dívida
- → Retorna breakdown por status com cores
-
-✅ Toda regra de negócio fica aqui
-✅ Chama o repository para acessar o banco
-✅ Lança erros com AppError quando algo é inválido
-❌ Não conhece req/res
-❌ Sem acesso direto ao banco
-```
+| Método | Rota |
+| ------ | ---- |
+| GET | `/` |
 
 ---
 
-### 📁 `repositories/`
-> **Única camada que fala com o banco** de dados
+## Regras de negócio
 
-```text
-fazenda.repository.js
- → buscarTodos, buscarPorId, buscarComColheitas
- → create, update, delete
+### Fazendas
+- Tipo obrigatório: `PROPRIA`, `ARRENDADA_DE_TERCEIROS` ou `ARRENDADA_PARA_TERCEIROS`.
+- Fazendas arrendadas podem ter cultura, quantidade de sacas e periodicidade de entrega.
+- Funcionários só enxergam fazendas vinculadas (`usuarios_fazendas`).
 
-cultura.repository.js
- → buscarTodos, buscarPorId, buscarPorNome
- → create, update, delete
+### Culturas e vínculo
+- Nome único no catálogo global; cor gerada automaticamente.
+- Vincular cultura à fazenda exige **ao menos um talhão** dessa cultura no mapa.
+- Hectares do vínculo são a **soma dos talhões** — não informados manualmente.
+- Status operacional: PLANTIO, ADUBACAO, PULVERIZACAO, COLHEITA; SECAGEM apenas para café.
 
-colheita.repository.js
- → buscarTodos, buscarPorId, buscarPorFazenda
- → create, update, delete
+### Mapa / Polígonos
+- Geometria PostGIS `Polygon, SRID 4326`.
+- Área calculada automaticamente (`geometry.service` + Turf).
+- Histórico arquiva talhões colhidos sem perder geometria.
 
-gasto.repository.js
- → buscarTodos, buscarPorColheita
- → totalPorStatus → soma separada de PAGO e PENDENTE
- → create, update, delete
+### Colheitas
+- Fazenda e cultura devem existir e estar vinculados.
+- Sacas produzidas alimentam estoque.
 
-lucro.repository.js
- → buscarTodos, buscarPorColheita
- → create, update, delete
+### Gastos
+- Vinculados a `colheitaId`.
+- Status `PAGO` ou `PENDENTE`.
+- Tipo livre (VARCHAR); `tipoPersonalizado` quando tipo = "OUTRO".
 
-lembrete.repository.js
- → buscarTodos, buscarPorId, buscarPendentes
- → create, update, delete
+### Lucros
+- `VENDA_COLHEITA`: valida estoque disponível (colheita − vendas).
+- `ARRENDAMENTO`: vinculado à fazenda, com fluxo de recebimento.
 
-insumo.repository.js
- → buscarTodos, buscarPorFazenda
- → create, delete
+### Estoque
+- Saldo = sacas colhidas − sacas vendidas (por colheita/cultura).
+- Entregas de arrendamento com confirmação de status.
 
-estoque.repository.js
- → totalSacasPorColheita    → soma total de sacas colhidas
- → totalVendidasPorColheita → soma total de sacas já vendidas
+### Lembretes
+- `usuarioId` inferido do JWT — nunca confiar no body.
+- Recorrência: SEMANAL, MENSAL, TRIMESTRAL, ANUAL, OUTROS (custom).
+- Envio WhatsApp via Evolution API; job cron processa pendentes.
+- Endpoints `/dia` e `/calendario` exigem query params validados (400 se ausentes).
 
-✅ Toda query de banco fica aqui
-✅ Se trocar de banco, só mexe aqui
-❌ Sem regra de negócio
-❌ Sem req/res
-```
+### Simulação
+- Calcula valor líquido após taxas (IBPT por NCM da cultura).
+- Suporta BRL, USD e EUR com câmbio manual ou da API.
+- Histórico persistido em `simulacoes`.
 
----
-
-### 📁 `routes/`
-> Define as **URLs** e conecta aos controllers
-
-```text
-auth.routes.js      → rotas de /api/auth
-fazenda.routes.js   → rotas de /api/fazendas
-cultura.routes.js   → rotas de /api/culturas
-colheita.routes.js  → rotas de /api/colheitas
-gasto.routes.js     → rotas de /api/gastos
-lucro.routes.js     → rotas de /api/lucros
-lembrete.routes.js  → rotas de /api/lembretes
-insumo.routes.js    → rotas de /api/insumos
-estoque.routes.js   → rotas de /api/estoque
-cotacao.routes.js   → rotas de /api/cotacao
-simulacao.routes.js → rotas de /api/simulacao
-ia.routes.js        → rotas de /api/ia
-
-index.js
- → Agrupa todas as rotas em um único lugar
- → É o único arquivo registrado no app.js
-
-✅ Aplica middlewares específicos por rota
-✅ Chama o controller correto
-```
+### Chat / Insights
+- Contexto montado a partir de dados reais da fazenda (colheitas, gastos, estoque).
+- Snapshots de insights cacheados em `insight_snapshots`.
+- Chaves Gemini separadas: `GEMINI_API_KEY_CHATBOT` e `GEMINI_API_KEY_INSIGHTS`.
 
 ---
 
-### 📁 `middlewares/`
-> Funções que rodam **entre a requisição e o controller**
+## Jobs agendados
 
-```text
-auth.middleware.js
- → Verifica se o token JWT existe e é válido
- → Bloqueia com 401 se inválido ou ausente
- → Anexa os dados do usuário no req
-
-error.middleware.js
- → Captura TODOS os erros da aplicação
- → Retorna resposta padronizada com status e mensagem
- → DEVE ser o último middleware registrado no app.js
- → Loga o erro com o logger
-
-validator.middleware.js
- → Recebe um schema Zod como parâmetro
- → Valida o req.body antes de chegar no controller
- → Retorna 400 com mensagem clara se dados inválidos
-
-limitador.middleware.js
- → Limita quantidade de requisições por IP
- → Protege contra ataques de força bruta
- → Configurável por rota (login mais restrito)
-
-logger.middleware.js
- → Loga toda requisição que chega
- → Registra: método, URL, status e tempo de resposta
-```
+| Job | Arquivo | Função |
+| --- | ------- | ------ |
+| Lembretes | `jobs/lembretes.job.js` | Envia lembretes pendentes via WhatsApp |
+| Cotação update | `jobs/cotacao-update.job.js` | Atualiza cache USD/EUR |
+| Cotação cleanup | `jobs/cotacao-cleanup.job.js` | Reset semanal do histórico |
 
 ---
 
-### 📁 `schemas/`
-> **Validação dos dados** de entrada com Zod
+## Integrações externas
 
-```text
-auth.schema.js
- → email: string obrigatório
- → senha: string obrigatório, mínimo 6 caracteres
-
-fazenda.schema.js
- → nome: string obrigatório
- → tipo: enum obrigatório
-   (PROPRIA | ARRENDADA_DE_TERCEIROS | ARRENDADA_PARA_TERCEIROS)
- → localizacao: string opcional
-
-cultura.schema.js
- → nome: string obrigatório
- → cor: string opcional (gerada automaticamente se omitida)
-
-colheita.schema.js
- → fazendaId: uuid obrigatório
- → culturaId: uuid obrigatório (FK → culturas)
- → area: número obrigatório (hectares)
- → sacasProduzidas: número obrigatório
- → ano: número obrigatório
- → dataColheita: data obrigatória
-
-gasto.schema.js
- → colheitaId: uuid obrigatório
- → tipo: string obrigatório (texto livre)
- → tipoPersonalizado: string opcional
-   (obrigatório quando tipo = "Outro")
- → valor: número obrigatório
- → dataVencimento: data opcional
- → status: enum obrigatório (PAGO | PENDENTE)
- → descricao: string opcional
-
-lucro.schema.js
- → colheitaId: uuid obrigatório
- → quantidadeSacas: número obrigatório
- → valorUnitario: número obrigatório
- → comprador: string obrigatório
- → data: data obrigatória
-
-lembrete.schema.js
- → titulo: string obrigatório
- → dataLembrete: datetime obrigatório
- → fazendaId: uuid opcional
- → telefoneWhatsapp: string opcional
- → descricao: string opcional
-
-insumo.schema.js
- → fazendaId: uuid obrigatório
- → item: string obrigatório
- → quantidade: número obrigatório
- → observacoes: string opcional
- → data: data obrigatória
-
-simulacao.schema.js
- → colheitaId: uuid obrigatório
- → valorDivida: número obrigatório
-
-✅ Garante que dados inválidos nem chegam no controller
-✅ Retorna mensagens de erro claras e padronizadas
-✅ Sempre usado junto com o validator.middleware
-```
+| Serviço | Uso | Config |
+| ------- | --- | ------ |
+| Neon PostgreSQL | Banco principal | `DATABASE_URL`, `DIRECT_URL` |
+| Google Gemini | Chat + Insights | `GEMINI_API_KEY_*` |
+| Evolution API | WhatsApp | `EVOLUTION_*` |
+| IBPT / Valraw | Taxas na simulação | `IBPT_*` |
+| Resend | E-mail transacional | configurado no auth service |
+| RSS externos | Feed de notícias | `noticia.sources.js` |
 
 ---
 
-### 📁 `jobs/`
-> Tarefas agendadas que rodam em **paralelo ao servidor**
+## Autenticação e autorização
 
-```text
-lembretes.job.js
- → Cron que roda de hora em hora
- → Busca lembretes com data próxima
- → Chama whatsapp.service para enviar a mensagem
- → Atualiza status do lembrete para ENVIADO
-```
+1. Login retorna JWT + objeto `usuario` + `menu` filtrado por role.
+2. `auth.middleware` decodifica token e popula `req.usuario`.
+3. `authorize('ADMIN')` restringe rotas administrativas.
+4. Menu dinâmico definido em `shared/navigation/menu.config.js` → `buildMenuForRole(role)`.
+5. Funcionários têm acesso filtrado por `fazendasVinculadas` nos services.
 
 ---
 
-### 📁 `config/`
-> **Configurações técnicas** da aplicação
-
-```text
-env.js
- → Valida se todas as variáveis de ambiente existem
- → A aplicação não sobe se faltar alguma variável
-
-cors.js
- → Define quais origens podem acessar a API
- → Configurado via variável de ambiente CORS_ORIGIN
-
-index.js
- → Exporta todas as configurações juntas
-```
-
----
-
-### 📁 `database/`
-> Tudo relacionado ao **banco de dados**
-
-```text
-client.js
- → Instância do Prisma 5 pronta pra usar em toda a aplicação
- → Importado pelos repositories
-
-seeds/
- admin.seed.js
-   → Cria o usuário administrador padrão
-   → Executado uma única vez ao configurar o ambiente
-```
-
----
-
-### 📁 `shared/`
-> Código **reutilizado em todo o backend**
-
-```text
-errors/
- AppError.js
-   → Classe de erro customizado da aplicação
-   → Recebe mensagem e statusCode
-   → Lançado nos services quando algo é inválido
-   → Capturado e tratado pelo error.middleware
-
-utils/
- logger.js
-   → Instância configurada do Pino
-   → Substitui o console.log em toda a aplicação
-
- jwt.js
-   → generateToken(payload)   → gera um token JWT
-   → verifyToken(token)       → valida e retorna os dados
-
- bcrypt.js
-   → hash(password)           → gera o hash da senha
-   → compare(password, hash)  → compara senha com hash
-```
-
----
-
-### 📁 `tests/`
-> **Testes automatizados** da aplicação
-
-```text
-setup.js
- → Configurações globais antes de rodar os testes
- → Conexão com banco de teste
- → Limpeza de dados entre cada teste
-
-unit/
- → Testa funções isoladas de cada service
- → Sem banco real — usa mock do repository
-
- fazenda.service.spec.js
-   → testa bloqueio de exclusão com colheitas vinculadas
-   → testa validação dos 3 tipos de fazenda
-
- colheita.service.spec.js
-   → testa validação de fazenda e cultura existentes
-
- gasto.service.spec.js
-   → testa validação de colheita existente
-   → testa gerenciamento de status (PAGO | PENDENTE)
-   → testa tipo personalizado
-
- lucro.service.spec.js
-   → testa bloqueio por estoque insuficiente
-   → testa vínculo com colheita existente
-
- lembrete.service.spec.js
-   → testa criação e atualização de status
-
- simulacao.service.spec.js
-   → testa cálculo de abatimento de dívida
-
-integration/
- → Testa o fluxo completo da rota até o banco
-
- fazenda.spec.js   → CRUD completo + regras de exclusão
- colheita.spec.js  → CRUD + vínculo com fazenda e cultura
- gasto.spec.js     → CRUD + validação de status
- lucro.spec.js     → criação + validação de estoque
-```
-
----
-
-## 🔄 Fluxo de uma Requisição
-
-```text
-                 REQUEST
-                    │
-                    ▼
-             ┌────────────┐
-             │   routes   │
-             │  index.js  │  agrupa todas as rotas
-             └─────┬──────┘
-                    │
-                    ▼
-    ┌───────────────────────────────┐
-    │           middlewares         │
-    │                               │
-    │  1. logger.middleware         │ loga a requisição
-    │  2. auth.middleware           │ token válido?
-    │  3. validator.middleware      │ body válido?
-    └───────────────┬───────────────┘
-                    │
-                    ▼
-           ┌─────────────────┐
-           │   controller    │◄── C do MVC
-           │                 │
-           │ recebe req/res  │
-           │ chama o service │
-           │ retorna resposta│
-           └────────┬────────┘
-                    │
-                    ▼
-            ┌───────────────┐
-            │    service    │
-            │               │
-            │ regra de      │
-            │ negócio       │
-            │ lança AppError│
-            └───┬───────────┘
-                │
-    ┌───────────┼────────────┐
-    ▼           ▼            ▼
-repository  whatsapp.svc   ia.svc
-(banco)     (Evolution)    (Gemini)
-    │
-    ▼
-  model     ◄── M do MVC
-    │
-    ▼
-   view     ◄── V do MVC
-    │
-    ▼
-RESPONSE
-
-─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
-CRON (paralelo ao servidor)
- lembretes.job.js
-   → roda de hora em hora
-   → busca lembretes pendentes
-   → envia via whatsapp.service
-   → atualiza status para ENVIADO
-─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
-
-─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
-Se ocorrer erro em qualquer etapa:
-
-service lança AppError
-  │
-  ▼
-controller → next(error)
-  │
-  ▼
-error.middleware
- → loga o erro
- → retorna JSON padronizado
-─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
-```
-
----
-
-## 🛣️ Rotas da API
-
-```text
-Todas as rotas seguem o prefixo /api
-
-AUTH
- POST   /api/auth/login
- POST   /api/auth/cadastro
- POST   /api/auth/logout
-
-FAZENDAS
- GET    /api/fazendas
- GET    /api/fazendas/:id
- POST   /api/fazendas
- PUT    /api/fazendas/:id
- DELETE /api/fazendas/:id
-
-CULTURAS
- GET    /api/culturas
- POST   /api/culturas
- PUT    /api/culturas/:id
- DELETE /api/culturas/:id
-
-COLHEITAS
- GET    /api/colheitas
- GET    /api/colheitas/:id
- GET    /api/colheitas/fazenda/:fazendaId
- POST   /api/colheitas
- PUT    /api/colheitas/:id
- DELETE /api/colheitas/:id
-
-GASTOS
- GET    /api/gastos
- GET    /api/gastos/colheita/:colheitaId
- POST   /api/gastos
- PUT    /api/gastos/:id
- DELETE /api/gastos/:id
-
-LUCROS
- GET    /api/lucros
- GET    /api/lucros/colheita/:colheitaId
- POST   /api/lucros
- PUT    /api/lucros/:id
- DELETE /api/lucros/:id
-
-ESTOQUE
- GET    /api/estoque
- GET    /api/estoque/colheita/:colheitaId
-
-COTAÇÃO
- GET    /api/cotacao/dolar
-
-LEMBRETES
- GET    /api/lembretes
- GET    /api/lembretes/:id
- POST   /api/lembretes
- PUT    /api/lembretes/:id
- DELETE /api/lembretes/:id
-
-INSUMOS
- GET    /api/insumos
- GET    /api/insumos/fazenda/:fazendaId
- POST   /api/insumos
- DELETE /api/insumos/:id
-
-SIMULAÇÃO (RF09)
- GET    /api/simulacao/dividas
- POST   /api/simulacao/calcular-sacas
-
-IA (RF11 + RF14)
- GET    /api/ia/insights
- POST   /api/ia/chat
-```
-
----
-
-## ⚙️ Regras de Negócio
-
-```text
-Fazendas
- → Tipo obrigatório:
-   PROPRIA | ARRENDADA_DE_TERCEIROS | ARRENDADA_PARA_TERCEIROS
- → Não pode excluir se tiver colheitas vinculadas
-
-Culturas
- → Nome único no sistema
- → Cor gerada automaticamente
- → Não pode excluir se tiver colheitas vinculadas
-
-Colheitas
- → Fazenda deve existir antes de criar
- → Cultura deve existir (via culturaId — FK dinâmico)
-
-Gastos
- → Colheita deve existir antes de criar
- → Status obrigatório (PAGO | PENDENTE)
- → Tipo é texto livre (VARCHAR)
- → tipoPersonalizado obrigatório quando tipo = "Outro"
- → dataVencimento é opcional
-
-Lucros
- → Colheita deve existir
- → Quantidade não pode ser maior que o estoque disponível
-
-Lembretes
- → Enviados automaticamente via WhatsApp pelo cron job
- → Status: PENDENTE → ENVIADO após envio
-
-Insumos
- → Somente FUNCIONARIO pode registrar
- → Fazenda deve existir
-
-IA
- → Insights: dados do banco enviados ao Google Gemini
- → Chat: pergunta do usuário + contexto do banco →
-   resposta em linguagem natural via Gemini (RF14)
-```
-
----
-
-## ▶️ Como Rodar
-
-```bash
-# Instalar dependências
-npm install
-
-# Copiar o .env
-cp .env.example .env
-# → solicitar o .env preenchido ao líder do projeto
-
-# Gerar o client do Prisma
-npm run db:generate
-
-# Popular o banco com dados iniciais
-npm run db:seed
-
-# Rodar em desenvolvimento
-npm run dev
-# → servidor rodando em http://localhost:3333
-```
-
-> ⚠️ **Importante:** o banco já está criado e configurado no Neon.
-> Não rodar `npx prisma migrate dev` — pode gerar conflitos.
-> Usar apenas `npx prisma generate` para gerar o client.
-
----
-
-## 📋 Scripts
-
-| Script | Descrição |
-|--------|-----------|
-| `npm run dev` | Desenvolvimento com hot reload |
-| `npm start` | Produção |
-| `npm test` | Testes |
-| `npm run test:coverage` | Testes com cobertura |
-| `npm run db:generate` | Gera o client do Prisma |
-| `npm run db:studio` | Interface visual do banco |
-| `npm run db:seed` | Popula dados iniciais |
-
----
-
-## 🔑 Variáveis de Ambiente
-
-Copie o `.env.example` e crie seu `.env`:
-
-```bash
-cp .env.example .env
-env
-# Servidor
-PORT=3333
-NODE_ENV=development
-
-# Banco de dados
-DATABASE_URL=
-DIRECT_URL=
-
-# JWT
-JWT_SECRET=
-JWT_EXPIRES_IN=7d
-
-# CORS
-CORS_ORIGIN=http://localhost:5173
-
-# Evolution API (WhatsApp)
-EVOLUTION_API_URL=
-EVOLUTION_API_KEY=
-EVOLUTION_INSTANCE=
-
-# Google Gemini (IA)
-GEMINI_API_KEY=
-```
-
----
-
-## ⚠️ Padrão de Erros
-
-Todos os erros retornam o mesmo formato:
+## Padrão de erros
 
 ```json
 {
- "status": "error",
- "message": "Descrição clara do que aconteceu"
+  "status": "error",
+  "message": "Descrição clara",
+  "issues": []
 }
 ```
 
-| Código | Situação |
-|--------|----------|
-| 400 | Dados inválidos ou regra de negócio violada |
-| 401 | Não autenticado |
-| 403 | Sem permissão |
-| 404 | Registro não encontrado |
-| 409 | Conflito (ex: cultura com nome duplicado) |
-| 500 | Erro interno do servidor |
+| HTTP | Situação |
+| ---- | -------- |
+| 400 | Validação Zod ou regra de negócio |
+| 401 | Token ausente/inválido |
+| 403 | Papel insuficiente |
+| 404 | Recurso inexistente |
+| 409 | Conflito (duplicidade) |
+| 500 | Erro interno |
+
+Sucesso:
+
+```json
+{
+  "status": "success",
+  "data": { }
+}
+```
 
 ---
 
-## 🆕 Atualização — Integração WhatsApp (Evolution API)
+## Testes
 
-### O que foi implementado
-
-- Base funcional da API com `app.js`, `server.js`, `config`, `middlewares`, `logger` e tratamento global de erros.
-- Módulo completo de lembretes com as camadas:
-  - `repositories/lembrete.repository.js`
-  - `services/lembrete.service.js`
-  - `controllers/lembrete.controller.js`
-  - `routes/lembrete.routes.js`
-  - `schemas/lembrete.schema.js`
-  - `views/lembrete.view.js`
-- Integração com a Evolution API em `services/whatsapp.service.js`.
-- Job agendado em `jobs/lembretes.job.js` para processar lembretes pendentes.
-
-### Endpoints novos/confirmados para lembretes
-
-```text
-GET    /api/health
-GET    /api/lembretes
-GET    /api/lembretes/:id
-POST   /api/lembretes
-PUT    /api/lembretes/:id
-DELETE /api/lembretes/:id
-POST   /api/lembretes/:id/enviar
-GET    /api/lembretes/whatsapp/status
-POST   /api/lembretes/whatsapp/provisionar
+```bash
+npm test
+npm run test:coverage
 ```
 
-### Comportamento do envio WhatsApp
+Estrutura:
+- **`tests/unit/`** — services, schemas, utils (mocks de repository).
+- **`tests/integration/`** — fluxo HTTP completo por domínio.
 
-- `POST /api/lembretes/:id/enviar`: força envio manual e marca o lembrete como `ENVIADO`.
-- Job (`node-cron`) processa lembretes `PENDENTE` automaticamente.
-- Se `telefoneWhatsapp` não existir, o service tenta fallback para `usuarios.telefone`.
-- Se as variáveis `EVOLUTION_API_URL`, `EVOLUTION_API_KEY` e `EVOLUTION_INSTANCE` não estiverem completas, o envio retorna erro controlado (integração desabilitada).
-- `POST /api/lembretes/whatsapp/provisionar`: cria a instância na Evolution API (se ainda não existir) e retorna dados de conexão (QR/pairing).
-- `GET /api/lembretes/whatsapp/status`: além de validar env, consulta o estado real da conexão da instância (`open`, `connecting`, `close` ou `nao_encontrada`).
+Arquivos notáveis: `lembrete.recorrencia.spec.js`, `simulacao.service.spec.js`, `geometry.service.spec.js`, `dashboard.service.spec.js`.
 
-### Infraestrutura local da Evolution
+---
 
-- Arquivo pronto para subir stack local:
-  - `docker-compose.evolution.yml`
-- Serviços:
-  - Evolution API
-  - Redis
-  - PostgreSQL
-- Comando:
-  - `docker compose -f docker-compose.evolution.yml up -d`
+## Como rodar
 
-### Testes
+```bash
+npm install
+cp .env.example .env
+npm run db:generate
+npm run db:seed
+npm run dev
+```
 
-- Teste unitário implementado para fluxo de envio em:
-  - `src/tests/unit/lembrete.service.spec.js`
+> Banco Neon já provisionado. Usar `db:generate`, não `migrate dev`, sem alinhamento da equipe.
+
+---
+
+## Variáveis de ambiente
+
+Ver [`.env.example`](../.env.example). Grupos principais:
+
+| Grupo | Variáveis |
+| ----- | --------- |
+| Servidor | `PORT`, `NODE_ENV`, `CORS_ORIGIN`, `WEB_APP_URL` |
+| Banco | `DATABASE_URL`, `DIRECT_URL` |
+| Auth | `JWT_SECRET`, `JWT_EXPIRES_IN` |
+| IA | `GEMINI_API_KEY_CHATBOT`, `GEMINI_API_KEY_INSIGHTS` |
+| WhatsApp | `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE` |
+| Simulação | `IBPT_ENABLED`, `IBPT_UF`, `IBPT_TOKEN`, … |
+| Cotação | `COTACAO_CLEANUP_CRON`, `COTACAO_CLEANUP_TIMEZONE` |

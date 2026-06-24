@@ -65,6 +65,7 @@ export const usuarioService = {
             payload.must_change_password = true
             payload.token_reset = null
             payload.token_reset_expira = null
+            payload.token_version = { increment: 1 }
         }
 
         if (Object.keys(payload).length === 0 && fazendaIds === undefined) {

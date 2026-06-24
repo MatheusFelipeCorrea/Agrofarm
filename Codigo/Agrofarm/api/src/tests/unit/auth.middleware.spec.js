@@ -37,12 +37,14 @@ describe("authMiddleware", () => {
   });
 
   it("usa usuario do banco pelo id do token", async () => {
-    verifyToken.mockReturnValue({ id: "u1", email: "a@b.com" });
+    verifyToken.mockReturnValue({ id: "u1", email: "a@b.com", tokenVersion: 1 });
     authRepository.buscarPorId.mockResolvedValue({
       id: "u1",
       nome: "Admin",
       email: "a@b.com",
       role: "ADMIN",
+      token_version: 1,
+      must_change_password: false,
     });
 
     const { req, next } = mockReqRes();
@@ -52,14 +54,34 @@ describe("authMiddleware", () => {
     expect(next).toHaveBeenCalledWith();
   });
 
+  it("rejeita token com versao desatualizada", async () => {
+    verifyToken.mockReturnValue({ id: "u1", email: "a@b.com", tokenVersion: 0 });
+    authRepository.buscarPorId.mockResolvedValue({
+      id: "u1",
+      nome: "Admin",
+      email: "a@b.com",
+      role: "ADMIN",
+      token_version: 2,
+      must_change_password: false,
+    });
+
+    const { req, next } = mockReqRes();
+    await authMiddleware(req, {}, next);
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError));
+    expect(next.mock.calls[0][0].statusCode).toBe(401);
+  });
+
   it("resolve usuario pelo email quando id do token ficou obsoleto apos reseed", async () => {
-    verifyToken.mockReturnValue({ id: "id-antigo", email: "admin@test.com" });
+    verifyToken.mockReturnValue({ id: "id-antigo", email: "admin@test.com", tokenVersion: 0 });
     authRepository.buscarPorId.mockResolvedValue(null);
     authRepository.buscarPorEmail.mockResolvedValue({
       id: "id-novo",
       nome: "Admin",
       email: "admin@test.com",
       role: "ADMIN",
+      token_version: 0,
+      must_change_password: false,
     });
 
     const { req, next } = mockReqRes();

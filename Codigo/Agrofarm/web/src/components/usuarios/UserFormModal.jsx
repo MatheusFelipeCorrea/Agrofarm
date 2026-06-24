@@ -146,9 +146,9 @@ export default function UserFormModal({
                     autoComplete="name"
                     placeholder="Digite o nome do usuário"
                     value={form.nome}
-                    onChange={(e) => setForm((p) => ({ ...p, nome: e.target.value.slice(0, 150) }))}
+                    onChange={(e) => setForm((p) => ({ ...p, nome: e.target.value.slice(0, 100) }))}
                     className="usuario-form-modal-input agro-user-form-dialog__input"
-                    maxLength={150}
+                    maxLength={100}
                   />
                 </div>
 
@@ -291,7 +291,7 @@ export default function UserFormModal({
                         <div className="max-h-40 overflow-y-auto p-2">
                           {fazendasSugeridas.length > 0 ? (
                             <ul className="space-y-1">
-                              {fazendasSugeridas.slice(0, 10).map((fazenda) => (
+                              {fazendasSugeridas.map((fazenda) => (
                                 <li key={fazenda.id}>
                                   <button
                                     type="button"

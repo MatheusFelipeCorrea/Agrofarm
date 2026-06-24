@@ -47,9 +47,6 @@ export default function LucroTable({
   items,
   onEdit,
   onDelete,
-  onMarcarRecebimento,
-  isAdmin = false,
-  recebimentoBusyId = null,
   loading,
   meta,
   onPageChange,
@@ -92,88 +89,47 @@ export default function LucroTable({
             Nenhum registro encontrado para os filtros selecionados.
           </AgroDataTableEmpty>
         ) : (
-          items.map((row) => {
-            const isArrendamento = row.origem === "ARRENDAMENTO";
-            const busy = recebimentoBusyId === row.id;
-
-            return (
-              <AgroDataTableRow
-                key={row.id}
-                className={
-                  isArrendamento && row.statusRecebimento === "PENDENTE"
-                    ? "bg-amber-50/50 ring-1 ring-inset ring-amber-200/80"
-                    : ""
-                }
-              >
-                <AgroDataTableTd align="left" className="font-medium text-gray-900">
-                  {row.fazenda?.nome ?? "—"}
-                </AgroDataTableTd>
-                <AgroDataTableTd className="tabular-nums text-gray-600">
-                  {isArrendamento
-                    ? row.colheita?.label ?? "Arrendamento"
-                    : `#${row.colheita?.ano ?? row.colheitaId?.slice(0, 4) ?? "—"}`}
-                </AgroDataTableTd>
-                <AgroDataTableTd>
-                  {row.cultura ? (
-                    <div className="flex justify-center">
-                      <CulturaPill nome={row.cultura.nome} cor={row.cultura.cor} />
-                    </div>
-                  ) : (
-                    <span className="text-gray-400">—</span>
-                  )}
-                </AgroDataTableTd>
-                <AgroDataTableTd className="tabular-nums text-gray-700">
-                  {isArrendamento ? "—" : (row.quantidadeSacas ?? "—")}
-                </AgroDataTableTd>
-                <AgroDataTableTd className="tabular-nums text-green-700">
-                  {formatBRL(row.valorUnitario)}
-                </AgroDataTableTd>
-                <AgroDataTableTd className="font-semibold tabular-nums text-green-700">
-                  {formatBRL(row.total)}
-                </AgroDataTableTd>
-                <AgroDataTableTd className="text-gray-700">{row.comprador ?? "—"}</AgroDataTableTd>
-                <AgroDataTableTd className="tabular-nums text-gray-700">{formatDate(row.data)}</AgroDataTableTd>
-                <AgroDataTableTd>
+          items.map((row) => (
+            <AgroDataTableRow key={row.id}>
+              <AgroDataTableTd align="left" className="font-medium text-gray-900">
+                {row.fazenda?.nome ?? "—"}
+              </AgroDataTableTd>
+              <AgroDataTableTd className="tabular-nums text-gray-600">
+                #{row.colheita?.ano ?? row.colheitaId?.slice(0, 4) ?? "—"}
+              </AgroDataTableTd>
+              <AgroDataTableTd>
+                {row.cultura ? (
                   <div className="flex justify-center">
-                    <LucroSituacaoBadge
-                      origem={row.origem}
-                      statusRecebimento={row.statusRecebimento}
-                      parcelaVencida={row.parcelaVencida}
-                    />
+                    <CulturaPill nome={row.cultura.nome} cor={row.cultura.cor} />
                   </div>
-                </AgroDataTableTd>
-                <AgroDataTableTd>
-                  {isArrendamento && isAdmin ? (
-                    <div className="flex flex-col items-center gap-1 sm:flex-row sm:justify-center">
-                      <button
-                        type="button"
-                        disabled={busy || row.statusRecebimento === "RECEBIDO"}
-                        onClick={() => onMarcarRecebimento?.(row.id, "RECEBIDO")}
-                        className="inline-flex h-8 min-w-[5.5rem] items-center justify-center rounded-lg border border-green-200 bg-green-50 px-2 text-xs font-semibold text-green-800 transition-colors hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        {busy ? "…" : "Recebido"}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy || row.statusRecebimento === "NAO_RECEBIDO"}
-                        onClick={() => onMarcarRecebimento?.(row.id, "NAO_RECEBIDO")}
-                        className="inline-flex h-8 min-w-[5.5rem] items-center justify-center rounded-lg border border-red-200 bg-red-50 px-2 text-xs font-semibold text-red-800 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Não recebido
-                      </button>
-                    </div>
-                  ) : isArrendamento ? (
-                    <span className="text-xs text-gray-400">—</span>
-                  ) : (
-                    <div className="flex items-center justify-center gap-2">
-                      <AgroDataTableEditButton onClick={() => onEdit(row)} label="Editar lucro" />
-                      <AgroDataTableDeleteButton onClick={() => onDelete(row)} label="Excluir lucro" />
-                    </div>
-                  )}
-                </AgroDataTableTd>
-              </AgroDataTableRow>
-            );
-          })
+                ) : (
+                  <span className="text-gray-400">—</span>
+                )}
+              </AgroDataTableTd>
+              <AgroDataTableTd className="tabular-nums text-gray-700">
+                {row.quantidadeSacas ?? "—"}
+              </AgroDataTableTd>
+              <AgroDataTableTd className="tabular-nums text-green-700">
+                {formatBRL(row.valorUnitario)}
+              </AgroDataTableTd>
+              <AgroDataTableTd className="font-semibold tabular-nums text-green-700">
+                {formatBRL(row.total)}
+              </AgroDataTableTd>
+              <AgroDataTableTd className="text-gray-700">{row.comprador ?? "—"}</AgroDataTableTd>
+              <AgroDataTableTd className="tabular-nums text-gray-700">{formatDate(row.data)}</AgroDataTableTd>
+              <AgroDataTableTd>
+                <div className="flex justify-center">
+                  <LucroSituacaoBadge origem={row.origem} />
+                </div>
+              </AgroDataTableTd>
+              <AgroDataTableTd>
+                <div className="flex items-center justify-center gap-2">
+                  <AgroDataTableEditButton onClick={() => onEdit(row)} label="Editar lucro" />
+                  <AgroDataTableDeleteButton onClick={() => onDelete(row)} label="Excluir lucro" />
+                </div>
+              </AgroDataTableTd>
+            </AgroDataTableRow>
+          ))
         )}
       </AgroDataTableBody>
     </AgroDataTable>

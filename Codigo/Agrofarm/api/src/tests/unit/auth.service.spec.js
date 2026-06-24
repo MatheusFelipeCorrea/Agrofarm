@@ -43,6 +43,7 @@ describe('authService', () => {
             email: 'novo@agrofarm.com',
             senha: 'hash',
             must_change_password: true,
+            token_version: 0,
         })
         compare.mockResolvedValue(true)
 
@@ -66,6 +67,7 @@ describe('authService', () => {
             senha: 'hash',
             role: 'ADMIN',
             must_change_password: false,
+            token_version: 2,
         }
 
         authRepository.buscarPorEmail.mockResolvedValue(usuario)
@@ -79,12 +81,32 @@ describe('authService', () => {
 
         expect(resultado.token).toBe('jwt-token')
         expect(resultado.usuario).toEqual(usuario)
-        expect(resultado.menu).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({ id: 'dashboard' }),
-                expect.objectContaining({ id: 'gerenciar-usuarios' }),
-            ]),
+        expect(generateToken).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: 'user-1',
+                tokenVersion: 2,
+            }),
         )
+    })
+
+    it('informa senha temporaria quando login falha com must_change_password', async () => {
+        authRepository.buscarPorEmail.mockResolvedValue({
+            id: 'user-pw2',
+            email: 'novo@agrofarm.com',
+            senha: 'hash',
+            must_change_password: true,
+        })
+        compare.mockResolvedValue(false)
+
+        await expect(
+            authService.login({
+                email: 'novo@agrofarm.com',
+                senha: 'senha-antiga',
+            }),
+        ).rejects.toMatchObject({
+            message: expect.stringContaining('senha temporaria'),
+            statusCode: 401,
+        })
     })
 
     it('retorna sessao atual filtrada por role sem token', async () => {
@@ -169,7 +191,7 @@ describe('authService', () => {
     it('esqueciSenha envia email quando usuario existe', async () => {
         authRepository.buscarPorEmail.mockResolvedValue({ id: 'user-5', email: 'a@b.com', nome: 'User' })
         authRepository.salvarTokenReset.mockResolvedValue(undefined)
-        enviarEmailRedefinicao.mockResolvedValue(undefined)
+        enviarEmailRedefinicao.mockResolvedValue({ enviado: true, link: 'http://localhost:5173/redefinir-senha?token=abc' })
 
         await authService.esqueciSenha({ email: 'a@b.com' })
 
@@ -184,7 +206,7 @@ describe('authService', () => {
         hash.mockResolvedValue('nova-hash')
         authRepository.atualizarSenha.mockResolvedValue(undefined)
 
-        await authService.redefinirSenha({ token: 'tok', novaSenha: '123456' })
+        await authService.redefinirSenha({ token: 'tok', novaSenha: '12345678' })
 
         expect(authRepository.atualizarSenha).toHaveBeenCalledWith('user-6', 'nova-hash')
     })
@@ -206,6 +228,7 @@ describe('authService', () => {
             email: 'func@agrofarm.com',
             role: 'FUNCIONARIO',
             must_change_password: false,
+            token_version: 1,
         })
         generateToken.mockReturnValue('jwt-token')
 

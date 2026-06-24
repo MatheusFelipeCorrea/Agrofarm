@@ -2,10 +2,9 @@ import { AppError } from '../errors/AppError.js'
 import { prisma } from '../../database/client.js'
 
 /**
- * Calcula saldo de sacas disponíveis para venda em uma colheita.
- * @returns {Promise<null | { colheita, totalProduzido, totalVendido, saldoDisponivel }>}
+ * Calcula saldo de sacas disponíveis para venda ou entrega de arrendamento em uma colheita.
  */
-export async function calcularSaldoColheita(colheitaId, { lucroIdIgnorar } = {}) {
+export async function calcularSaldoColheita(colheitaId, { lucroIdIgnorar, entregaIdIgnorar } = {}) {
     const colheita = await prisma.colheitas.findUnique({
         where: { id: colheitaId },
         select: {
@@ -21,19 +20,39 @@ export async function calcularSaldoColheita(colheitaId, { lucroIdIgnorar } = {})
         return null
     }
 
-    const agregacao = await prisma.lucros.aggregate({
-        _sum: { quantidade_sacas: true },
-        where: {
-            colheita_id: colheitaId,
-            ...(lucroIdIgnorar ? { id: { not: lucroIdIgnorar } } : {}),
-        },
-    })
+    const [vendasAgg, arrendamentosAgg] = await Promise.all([
+        prisma.lucros.aggregate({
+            _sum: { quantidade_sacas: true },
+            where: {
+                colheita_id: colheitaId,
+                origem: 'VENDA_COLHEITA',
+                ...(lucroIdIgnorar ? { id: { not: lucroIdIgnorar } } : {}),
+            },
+        }),
+        prisma.entregas_arrendamento.aggregate({
+            _sum: { quantidade_sacas: true },
+            where: {
+                colheita_id: colheitaId,
+                status: 'ENTREGUE',
+                ...(entregaIdIgnorar ? { id: { not: entregaIdIgnorar } } : {}),
+            },
+        }),
+    ])
 
     const totalProduzido = Number(colheita.sacas_produzidas ?? 0)
-    const totalVendido = Number(agregacao?._sum?.quantidade_sacas ?? 0)
-    const saldoDisponivel = totalProduzido - totalVendido
+    const totalVendido = Number(vendasAgg?._sum?.quantidade_sacas ?? 0)
+    const totalArrendamento = Number(arrendamentosAgg?._sum?.quantidade_sacas ?? 0)
+    const totalSaidas = totalVendido + totalArrendamento
+    const saldoDisponivel = totalProduzido - totalSaidas
 
-    return { colheita, totalProduzido, totalVendido, saldoDisponivel }
+    return {
+        colheita,
+        totalProduzido,
+        totalVendido,
+        totalArrendamento,
+        totalSaidas,
+        saldoDisponivel,
+    }
 }
 
 export function assertVendaSacasPermitida({ quantidadeSacas, totalProduzido, saldoDisponivel, culturaNome }) {

@@ -1,8 +1,6 @@
 import { prisma } from '../../database/client.js'
 import { TIPO_FAZENDA_SOMENTE_LEITURA } from './fazendaOperacao.js'
 
-const COMPRADOR_ARRENDAMENTO = 'Receita de arrendamento'
-
 function parseDateOnly(value) {
     if (!value) return null
     if (value instanceof Date) {
@@ -50,14 +48,16 @@ export function listarDatasRecebimentoAteHoje({ dataInicio, periodicidade, ate =
 export function normalizarCamposArrendamento(dados) {
     if (dados.tipo !== TIPO_FAZENDA_SOMENTE_LEITURA) {
         return {
-            arrendamento_valor: null,
+            arrendamento_cultura_id: null,
+            arrendamento_quantidade_sacas: null,
             arrendamento_periodicidade: null,
             arrendamento_data_inicio: null,
         }
     }
 
     return {
-        arrendamento_valor: dados.arrendamentoValor,
+        arrendamento_cultura_id: dados.arrendamentoCulturaId ?? null,
+        arrendamento_quantidade_sacas: dados.arrendamentoQuantidadeSacas ?? null,
         arrendamento_periodicidade: dados.arrendamentoPeriodicidade,
         arrendamento_data_inicio: dados.arrendamentoDataInicio
             ? parseDateOnly(dados.arrendamentoDataInicio)
@@ -65,14 +65,15 @@ export function normalizarCamposArrendamento(dados) {
     }
 }
 
-export async function sincronizarLucrosArrendamento(fazendaId) {
+export async function sincronizarEntregasArrendamento(fazendaId) {
     const fazenda = await prisma.fazendas.findUnique({
         where: { id: fazendaId },
         select: {
             id: true,
             nome: true,
             tipo: true,
-            arrendamento_valor: true,
+            arrendamento_cultura_id: true,
+            arrendamento_quantidade_sacas: true,
             arrendamento_periodicidade: true,
             arrendamento_data_inicio: true,
         },
@@ -82,13 +83,14 @@ export async function sincronizarLucrosArrendamento(fazendaId) {
         return { gerados: 0, removidos: 0 }
     }
 
-    const valor = Number(fazenda.arrendamento_valor)
+    const culturaId = fazenda.arrendamento_cultura_id
+    const quantidadeSacas = Number(fazenda.arrendamento_quantidade_sacas)
     const periodicidade = fazenda.arrendamento_periodicidade
     const dataInicio = fazenda.arrendamento_data_inicio
 
-    if (!valor || valor <= 0 || !periodicidade || !dataInicio) {
-        await prisma.lucros.deleteMany({
-            where: { fazenda_id: fazendaId, origem: 'ARRENDAMENTO' },
+    if (!culturaId || !quantidadeSacas || quantidadeSacas <= 0 || !periodicidade || !dataInicio) {
+        await prisma.entregas_arrendamento.deleteMany({
+            where: { fazenda_id: fazendaId, status: 'PENDENTE' },
         })
         return { gerados: 0, removidos: 0 }
     }
@@ -98,13 +100,13 @@ export async function sincronizarLucrosArrendamento(fazendaId) {
         periodicidade,
     })
 
-    const existentes = await prisma.lucros.findMany({
-        where: { fazenda_id: fazendaId, origem: 'ARRENDAMENTO' },
-        select: { id: true, data: true, status_recebimento: true },
+    const existentes = await prisma.entregas_arrendamento.findMany({
+        where: { fazenda_id: fazendaId },
+        select: { id: true, data: true, status: true },
     })
 
     const existentesPorData = new Map(
-        existentes.map((l) => [formatDateOnly(parseDateOnly(l.data)), l]),
+        existentes.map((e) => [formatDateOnly(parseDateOnly(e.data)), e]),
     )
 
     let gerados = 0
@@ -115,27 +117,25 @@ export async function sincronizarLucrosArrendamento(fazendaId) {
         const existente = existentesPorData.get(dataStr)
 
         if (existente) {
-            await prisma.lucros.update({
-                where: { id: existente.id },
-                data: {
-                    quantidade_sacas: 1,
-                    valor_unitario: valor,
-                    comprador: COMPRADOR_ARRENDAMENTO,
-                },
-            })
-            atualizados += 1
+            if (existente.status === 'PENDENTE') {
+                await prisma.entregas_arrendamento.update({
+                    where: { id: existente.id },
+                    data: {
+                        cultura_id: culturaId,
+                        quantidade_sacas: quantidadeSacas,
+                    },
+                })
+                atualizados += 1
+            }
             continue
         }
 
-        await prisma.lucros.create({
+        await prisma.entregas_arrendamento.create({
             data: {
                 fazenda_id: fazendaId,
-                origem: 'ARRENDAMENTO',
-                colheita_id: null,
-                status_recebimento: 'PENDENTE',
-                quantidade_sacas: 1,
-                valor_unitario: valor,
-                comprador: COMPRADOR_ARRENDAMENTO,
+                cultura_id: culturaId,
+                quantidade_sacas: quantidadeSacas,
+                status: 'PENDENTE',
                 data,
             },
         })
@@ -144,12 +144,31 @@ export async function sincronizarLucrosArrendamento(fazendaId) {
 
     const datasSet = new Set(datasEsperadas)
     const idsRemover = existentes
-        .filter((l) => !datasSet.has(formatDateOnly(parseDateOnly(l.data))))
-        .map((l) => l.id)
+        .filter(
+            (e) =>
+                e.status === 'PENDENTE' &&
+                !datasSet.has(formatDateOnly(parseDateOnly(e.data))),
+        )
+        .map((e) => e.id)
 
     if (idsRemover.length) {
-        await prisma.lucros.deleteMany({ where: { id: { in: idsRemover } } })
+        await prisma.entregas_arrendamento.deleteMany({ where: { id: { in: idsRemover } } })
     }
 
     return { gerados, atualizados, removidos: idsRemover.length }
+}
+
+export async function sincronizarEntregasArrendamentoAutomaticos() {
+    const fazendas = await prisma.fazendas.findMany({
+        where: {
+            tipo: 'ARRENDADA_PARA_TERCEIROS',
+            arrendamento_cultura_id: { not: null },
+            arrendamento_quantidade_sacas: { not: null },
+            arrendamento_periodicidade: { not: null },
+            arrendamento_data_inicio: { not: null },
+        },
+        select: { id: true },
+    })
+
+    await Promise.all(fazendas.map((f) => sincronizarEntregasArrendamento(f.id)))
 }

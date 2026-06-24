@@ -4,45 +4,27 @@ function buildAuthWhere({ role, usuarioId }) {
     if (role === 'ADMIN') return {}
 
     return {
-        OR: [
-            {
-                colheitas: {
-                    fazendas: {
-                        usuarios_fazendas: {
-                            some: { usuario_id: usuarioId },
-                        },
-                    },
+        colheitas: {
+            fazendas: {
+                usuarios_fazendas: {
+                    some: { usuario_id: usuarioId },
                 },
             },
-            {
-                origem: 'ARRENDAMENTO',
-                fazendas: {
-                    usuarios_fazendas: {
-                        some: { usuario_id: usuarioId },
-                    },
-                },
-            },
-        ],
+        },
     }
 }
 
 function buildFazendaFilter({ fazendaId, role, fazendaIdsPermitidas }) {
     if (fazendaId && fazendaId !== 'all' && role === 'ADMIN') {
-        return {
-            OR: [
-                { colheitas: { fazenda_id: fazendaId } },
-                { fazenda_id: fazendaId, origem: 'ARRENDAMENTO' },
-            ],
-        }
+        return { colheitas: { fazenda_id: fazendaId } }
+    }
+
+    if (role === 'ADMIN' && fazendaIdsPermitidas?.length) {
+        return { colheitas: { fazenda_id: { in: fazendaIdsPermitidas } } }
     }
 
     if (role === 'FUNCIONARIO' && fazendaIdsPermitidas?.length) {
-        return {
-            OR: [
-                { colheitas: { fazenda_id: { in: fazendaIdsPermitidas } } },
-                { fazenda_id: { in: fazendaIdsPermitidas }, origem: 'ARRENDAMENTO' },
-            ],
-        }
+        return { colheitas: { fazenda_id: { in: fazendaIdsPermitidas } } }
     }
 
     return {}
@@ -89,10 +71,10 @@ function buildFiltersWhere({ fazendaId, culturaId, from, to, mes, ano, role, faz
     }
 
     if (Object.keys(fazendaFilter).length > 0) {
-        return { ...dataFilter, ...fazendaFilter }
+        return { ...dataFilter, ...fazendaFilter, origem: 'VENDA_COLHEITA' }
     }
 
-    return dataFilter
+    return { ...dataFilter, origem: 'VENDA_COLHEITA' }
 }
 
 const includeLucro = {
@@ -102,7 +84,6 @@ const includeLucro = {
             culturas: { select: { id: true, nome: true, cor: true } },
         },
     },
-    fazendas: { select: { id: true, nome: true } },
 }
 
 export const lucroRepository = {
@@ -151,25 +132,15 @@ export const lucroRepository = {
             select: {
                 quantidade_sacas: true,
                 valor_unitario: true,
-                origem: true,
-                status_recebimento: true,
             },
         })
 
-        const total = lucros.reduce((acc, l) => {
-            const valor = Number(l.quantidade_sacas) * Number(l.valor_unitario)
-            if (l.origem === 'ARRENDAMENTO') {
-                return l.status_recebimento === 'RECEBIDO' ? acc + valor : acc
-            }
-            return acc + valor
-        }, 0)
+        const total = lucros.reduce(
+            (acc, l) => acc + Number(l.quantidade_sacas) * Number(l.valor_unitario),
+            0,
+        )
 
-        const totalPendenteArrendamento = lucros.reduce((acc, l) => {
-            if (l.origem !== 'ARRENDAMENTO' || l.status_recebimento !== 'PENDENTE') return acc
-            return acc + Number(l.quantidade_sacas) * Number(l.valor_unitario)
-        }, 0)
-
-        return { totalLucro: total, totalPendenteArrendamento }
+        return { totalLucro: total }
     },
 
     buscarPorId: async (id) => {
@@ -181,7 +152,7 @@ export const lucroRepository = {
 
     buscarPorColheita: async (colheitaId) => {
         return prisma.lucros.findMany({
-            where: { colheita_id: colheitaId },
+            where: { colheita_id: colheitaId, origem: 'VENDA_COLHEITA' },
             include: includeLucro,
             orderBy: { data: 'desc' },
         })
@@ -192,7 +163,7 @@ export const lucroRepository = {
             where: {
                 AND: [
                     buildAuthWhere({ role, usuarioId }),
-                    { colheita_id: colheitaId },
+                    { colheita_id: colheitaId, origem: 'VENDA_COLHEITA' },
                 ],
             },
             include: includeLucro,
@@ -202,7 +173,7 @@ export const lucroRepository = {
 
     create: async (dados) => {
         return prisma.lucros.create({
-            data: dados,
+            data: { ...dados, origem: 'VENDA_COLHEITA' },
             include: includeLucro,
         })
     },

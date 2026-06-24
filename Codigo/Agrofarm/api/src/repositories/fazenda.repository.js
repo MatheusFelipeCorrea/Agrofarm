@@ -12,6 +12,9 @@ const fazendaIncludeCulturas = {
             },
         },
     },
+    arrendamento_culturas: {
+        select: { id: true, nome: true, cor: true },
+    },
 }
 
 export const fazendaRepository = {

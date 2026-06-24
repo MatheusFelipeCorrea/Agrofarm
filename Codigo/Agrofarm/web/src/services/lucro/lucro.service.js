@@ -46,8 +46,3 @@ export async function atualizar(id, dados) {
 export async function deletar(id) {
   await api.delete(`/lucros/${id}`);
 }
-
-export async function marcarRecebimentoArrendamento(id, status) {
-  const { data } = await api.patch(`/lucros/${id}/recebimento-arrendamento`, { status });
-  return data.data;
-}

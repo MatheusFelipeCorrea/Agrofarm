@@ -15,3 +15,13 @@ export async function getEstoqueDetalhe(colheitaId) {
   const { data } = await api.get(`/estoque/${colheitaId}`);
   return data.data;
 }
+
+export async function confirmarEntregaArrendamento(entregaId, colheitaId) {
+  const { data } = await api.patch(`/estoque/arrendamento/${entregaId}/confirmar`, { colheitaId });
+  return data.data;
+}
+
+export async function marcarEntregaArrendamento(entregaId, status) {
+  const { data } = await api.patch(`/estoque/arrendamento/${entregaId}/status`, { status });
+  return data.data;
+}

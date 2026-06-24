@@ -42,6 +42,20 @@ export async function changeInitialPassword({ userId, oldPassword, newPassword, 
   return normalizeSessionPayload(data);
 }
 
+export async function changePassword({ currentPassword, newPassword, confirmNewPassword }) {
+  const { data } = await api.post("/auth/change-password", {
+    currentPassword,
+    newPassword,
+    confirmNewPassword,
+  });
+  return normalizeSessionPayload(data);
+}
+
+export async function obterRecuperacaoConfig() {
+  const { data } = await api.get("/auth/recuperacao-config");
+  return data;
+}
+
 export async function cadastroUsuario({ nome, email, role, telefone, fazendaIds }) {
   const { data } = await api.post("/auth/cadastro", {
     nome,

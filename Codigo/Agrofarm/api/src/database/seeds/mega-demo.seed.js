@@ -65,7 +65,6 @@ const FARMS = [
     lat: -18.9102,
     lon: -46.9514,
     ativa: true,
-    arrendamento: { valor: 185000, periodicidade: "MENSAL", inicio: [2024, 3, 1] },
   },
   {
     key: "horizonte",
@@ -75,7 +74,7 @@ const FARMS = [
     lat: -18.9653,
     lon: -46.9387,
     ativa: true,
-    arrendamento: { valor: 92000, periodicidade: "SEMESTRAL", inicio: [2023, 8, 1] },
+    arrendamento: { cultura: "Milho", sacas: 1200, periodicidade: "SEMESTRAL", inicio: [2023, 8, 1] },
   },
   {
     key: "vale-graos-cafe",
@@ -223,9 +222,14 @@ function normalizarNome(s) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-async function criarFazendas() {
+async function criarFazendas(culturas) {
   const created = {};
   for (const f of FARMS) {
+    const arrendamentoCultura =
+      f.tipo === "ARRENDADA_PARA_TERCEIROS" && f.arrendamento?.cultura
+        ? resolverCultura(culturas, f.arrendamento.cultura)
+        : null;
+
     const row = await prisma.fazendas.create({
       data: {
         nome: f.nome,
@@ -234,7 +238,8 @@ async function criarFazendas() {
         latitude: f.lat,
         longitude: f.lon,
         ativa: f.ativa,
-        arrendamento_valor: f.arrendamento?.valor ?? null,
+        arrendamento_cultura_id: arrendamentoCultura?.id ?? null,
+        arrendamento_quantidade_sacas: f.arrendamento?.sacas ?? null,
         arrendamento_periodicidade: f.arrendamento?.periodicidade ?? null,
         arrendamento_data_inicio: f.arrendamento
           ? dateOnly(f.arrendamento.inicio[0], f.arrendamento.inicio[1], f.arrendamento.inicio[2])
@@ -514,38 +519,13 @@ async function criarLucros(colheitas, farms) {
     }
   }
 
-  const rio = farms["rio-verde"];
-  const horizonte = farms.horizonte;
-  const meses = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-  for (const m of meses) {
-    const data = dateOnly(2025, m + 1, 10);
-    await prisma.lucros.create({
-      data: {
-        fazenda_id: rio.id,
-        origem: "ARRENDAMENTO",
-        quantidade_sacas: 0,
-        valor_unitario: round2(Number(rio.arrendamento?.valor ?? 185000)),
-        comprador: "Arrendador - Familia Oliveira",
-        data,
-        status_recebimento: m < 8 ? "RECEBIDO" : "PENDENTE",
-      },
-    });
-    count += 1;
+  if (farms.horizonte?.id) {
+    const { sincronizarEntregasArrendamento } = await import(
+      "../../shared/fazenda/arrendamentoEntrega.js"
+    );
+    await sincronizarEntregasArrendamento(farms.horizonte.id);
   }
-  for (const m of [0, 6]) {
-    await prisma.lucros.create({
-      data: {
-        fazenda_id: horizonte.id,
-        origem: "ARRENDAMENTO",
-        quantidade_sacas: 0,
-        valor_unitario: round2(Number(horizonte.arrendamento?.valor ?? 92000) / 2),
-        comprador: "Parceiro Horizonte Agro",
-        data: dateOnly(2025, m + 1, 5),
-        status_recebimento: m === 0 ? "RECEBIDO" : "PENDENTE",
-      },
-    });
-    count += 1;
-  }
+
   return count;
 }
 
@@ -767,7 +747,7 @@ async function main() {
   const culturas = await carregarCulturas();
   console.log(`[mega] Culturas disponiveis: ${culturas.lista.map((c) => c.nome).join(", ")}`);
 
-  const farms = await criarFazendas();
+  const farms = await criarFazendas(culturas);
   await vincularUsuarios(farms, usuarios);
   const vinculos = await criarFazendaCulturas(farms, culturas);
   const poligonos = await criarTalhoes(farms, culturas, admin.id);

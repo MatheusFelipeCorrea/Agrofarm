@@ -44,9 +44,3 @@ export async function updateGasto(id, payload) {
 export async function deleteGasto(id) {
   await api.delete(`/gastos/${id}`);
 }
-
-/** Confirma recebimento de parcela de arrendamento (registra em Lucros). */
-export async function confirmarArrendamentoRecebimento(lucroId) {
-  const { data } = await api.patch(`/gastos/arrendamento/${lucroId}/confirmar-recebimento`);
-  return data.data;
-}

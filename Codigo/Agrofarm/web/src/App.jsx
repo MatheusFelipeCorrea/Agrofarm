@@ -18,11 +18,12 @@ import Colheitas from "./pages/Colheitas/Colheitas.jsx";
 import Lucros from "./pages/Lucros/Lucros.jsx";
 import Estoque from "./pages/Estoque/Estoque.jsx";
 import Insumos from "./pages/Insumos/Insumos.jsx";
-import { AdminRoute, PrivateRoute, PublicRoute } from "./routes/ProtectedRoute.jsx";
+import { AdminRoute, AuthPageRoute, PrivateRoute, PublicRoute } from "./routes/ProtectedRoute.jsx";
 import { getFirstAllowedPath } from "./routes/routeAccess.js";
 import RedefinirSenha from "./pages/Auth/RedefinirSenha/RedefinirSenha.jsx";
 import RecuperarSenha from "./pages/Auth/RecuperarSenha/RecuperarSenha.jsx";
 import TrocarSenhaInicial from "./pages/Auth/TrocarSenhaInicial/TrocarSenhaInicial.jsx";
+import AlterarSenha from "./pages/Auth/AlterarSenha/AlterarSenha.jsx";
 import Lembretes from "./pages/Lembretes/Lembretes.jsx";
 import Simulacao from "./pages/Simulacao/Simulacao.jsx";
 import Insights from "./pages/Insights/Insights.jsx";
@@ -93,9 +94,9 @@ function App() {
         <Route
           path="/recuperar-senha"
           element={
-            <PublicRoute>
+            <AuthPageRoute>
               <RecuperarSenha />
-            </PublicRoute>
+            </AuthPageRoute>
           }
         />
         <Route
@@ -109,9 +110,9 @@ function App() {
         <Route
           path="/redefinir-senha"
           element={
-            <PublicRoute>
+            <AuthPageRoute>
               <RedefinirSenha />
-            </PublicRoute>
+            </AuthPageRoute>
           }
         />
         <Route
@@ -216,6 +217,14 @@ function App() {
           element={
             <PrivateRoute>
               <Estoque />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/alterar-senha"
+          element={
+            <PrivateRoute>
+              <AlterarSenha />
             </PrivateRoute>
           }
         />

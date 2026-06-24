@@ -19,6 +19,9 @@ vi.mock("../../database/client.js", () => ({
     lucros: {
       deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
+    entregas_arrendamento: {
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
   },
 }));
 
@@ -81,7 +84,12 @@ describe("fazendaService CRUD", () => {
       lembretes: 0,
     });
 
+    const { prisma } = await import("../../database/client.js");
+
     await fazendaService.deletar("f1");
+    expect(prisma.entregas_arrendamento.deleteMany).toHaveBeenCalledWith({
+      where: { fazenda_id: "f1" },
+    });
     expect(fazendaRepository.delete).toHaveBeenCalledWith("f1");
   });
 });

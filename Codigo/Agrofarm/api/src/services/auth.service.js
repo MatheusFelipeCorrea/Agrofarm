@@ -5,10 +5,11 @@ import { generateToken } from '../shared/utils/jwt.js'
 import { enviarEmailRedefinicao } from '../shared/utils/email.js'
 import { AppError } from '../shared/errors/AppError.js'
 import { buildMenuForRole } from '../shared/navigation/menu.config.js'
+import { DEFAULT_ADMIN_RESET_PASSWORD } from '../shared/constants/passwordDefaults.js'
 import {
-    DEFAULT_ADMIN_RESET_PASSWORD,
-    MIN_NEW_PASSWORD_LENGTH,
-} from '../shared/constants/passwordDefaults.js'
+    assertNewPasswordValid,
+    isEmailConfigured,
+} from '../shared/utils/passwordValidation.js'
 
 function buildSessionPayload(usuario, token = null) {
     return {
@@ -16,6 +17,16 @@ function buildSessionPayload(usuario, token = null) {
         usuario,
         menu: buildMenuForRole(usuario.role),
     }
+}
+
+function buildTokenForUsuario(usuario) {
+    return generateToken({
+        id: usuario.id,
+        nome: usuario.nome,
+        email: usuario.email,
+        role: usuario.role,
+        tokenVersion: usuario.token_version ?? 0,
+    })
 }
 
 function normalizarFazendaIds(fazendaIds = []) {
@@ -33,6 +44,13 @@ export const authService = {
         const senhaCorreta = await compare(senha, usuario.senha)
 
         if (!senhaCorreta) {
+            if (usuario.must_change_password) {
+                throw new AppError(
+                    'Senha incorreta. Use a senha temporaria informada pelo administrador ou solicite uma nova redefinicao.',
+                    401,
+                )
+            }
+
             throw new AppError('Email ou senha incorretos', 401)
         }
 
@@ -43,12 +61,7 @@ export const authService = {
             }
         }
 
-        const token = generateToken({
-            id: usuario.id,
-            nome: usuario.nome,
-            email: usuario.email,
-            role: usuario.role,
-        })
+        const token = buildTokenForUsuario(usuario)
 
         return buildSessionPayload(usuario, token)
     },
@@ -58,6 +71,10 @@ export const authService = {
 
         if (!usuario) {
             throw new AppError('Usuario nao encontrado', 404)
+        }
+
+        if (usuario.must_change_password) {
+            throw new AppError('E necessario definir uma nova senha antes de acessar o sistema', 403)
         }
 
         return buildSessionPayload(usuario)
@@ -92,16 +109,33 @@ export const authService = {
     },
 
     esqueciSenha: async ({ email }) => {
+        const emailConfigurado = isEmailConfigured()
         const usuario = await authRepository.buscarPorEmail(email)
 
-        if (!usuario) return
+        if (!usuario) {
+            return { emailEnviado: false, emailConfigurado, usuarioEncontrado: false }
+        }
 
         const token = crypto.randomBytes(32).toString('hex')
         const expira = new Date(Date.now() + 60 * 60 * 1000)
 
         await authRepository.salvarTokenReset(email, token, expira)
-        await enviarEmailRedefinicao(email, token)
+        const { enviado: emailEnviado, link } = await enviarEmailRedefinicao(email, token)
+
+        const emDesenvolvimento = process.env.NODE_ENV !== 'production'
+
+        return {
+            emailEnviado,
+            emailConfigurado,
+            usuarioEncontrado: true,
+            ...(emDesenvolvimento ? { linkRedefinicao: link } : {}),
+        }
     },
+
+    obterConfigRecuperacao: () => ({
+        emailConfigurado: isEmailConfigured(),
+        modoDesenvolvimento: process.env.NODE_ENV !== 'production',
+    }),
 
     redefinirSenha: async ({ token, novaSenha }) => {
         const usuario = await authRepository.buscarPorTokenReset(token)
@@ -116,22 +150,14 @@ export const authService = {
             throw new AppError('Token inválido ou expirado', 400)
         }
 
+        assertNewPasswordValid(novaSenha, novaSenha)
+
         const senhaHash = await hash(novaSenha)
         await authRepository.atualizarSenha(usuario.id, senhaHash)
     },
 
     changeInitialPassword: async ({ userId, oldPassword, newPassword, confirmNewPassword }) => {
-        if (newPassword !== confirmNewPassword) {
-            throw new AppError('Nova senha e confirmacao devem ser iguais', 400)
-        }
-
-        if (newPassword.length < MIN_NEW_PASSWORD_LENGTH) {
-            throw new AppError(`Nova senha deve ter no minimo ${MIN_NEW_PASSWORD_LENGTH} caracteres`, 400)
-        }
-
-        if (newPassword === DEFAULT_ADMIN_RESET_PASSWORD) {
-            throw new AppError('A nova senha nao pode ser igual a senha padrao temporaria', 400)
-        }
+        assertNewPasswordValid(newPassword, confirmNewPassword)
 
         const usuario = await authRepository.buscarPorId(userId)
 
@@ -152,12 +178,30 @@ export const authService = {
         const senhaHash = await hash(newPassword)
         const usuarioAtualizado = await authRepository.concluirTrocaSenhaInicial(userId, senhaHash)
 
-        const token = generateToken({
-            id: usuarioAtualizado.id,
-            nome: usuarioAtualizado.nome,
-            email: usuarioAtualizado.email,
-            role: usuarioAtualizado.role,
-        })
+        const token = buildTokenForUsuario(usuarioAtualizado)
+
+        return buildSessionPayload(usuarioAtualizado, token)
+    },
+
+    changePassword: async (usuarioLogadoId, { currentPassword, newPassword, confirmNewPassword }) => {
+        assertNewPasswordValid(newPassword, confirmNewPassword)
+
+        const usuario = await authRepository.buscarPorId(usuarioLogadoId)
+
+        if (!usuario) {
+            throw new AppError('Usuario nao encontrado', 404)
+        }
+
+        const senhaAtualCorreta = await compare(currentPassword, usuario.senha)
+
+        if (!senhaAtualCorreta) {
+            throw new AppError('Senha atual incorreta', 401)
+        }
+
+        const senhaHash = await hash(newPassword)
+        const usuarioAtualizado = await authRepository.concluirTrocaSenhaInicial(usuarioLogadoId, senhaHash)
+
+        const token = buildTokenForUsuario(usuarioAtualizado)
 
         return buildSessionPayload(usuarioAtualizado, token)
     },

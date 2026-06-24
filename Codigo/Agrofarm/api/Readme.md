@@ -1,174 +1,158 @@
-## ▶️ Como Rodar
+# AgroFarm — API
+
+Backend HTTP do AgroFarm: **Node.js + Express + Prisma + PostgreSQL**.
+
+Documentação completa: [`Documents/Readme.md`](Documents/Readme.md)
+
+---
+
+## Início rápido
 
 ```bash
-# 1. Clonar o repositório
-git clone https://github.com/seu-usuario/projeto.git
-
-# 2. Entrar na pasta do backend
-cd Agrofarm/api
-
-# 3. Instalar dependências
 npm install
-
-# 4. Copiar o .env
 cp .env.example .env
-# → abrir o .env e preencher com os dados reais (Pegar com o Matheus)
-
-# 4) Gerar client do Prisma
 npm run db:generate
-
-# 6. Popular o banco com dados iniciais (apenas na primeira vez)
-npm run db:seed
-
-# 6) Subir API
+npm run db:seed        # primeira vez
 npm run dev
 ```
 
-API: `http://localhost:3333`
+**URL base:** `http://localhost:3333/api`
 
-## 📲 Evolution API (WhatsApp) — setup 100% local com Docker
+**Health check:** `GET /api/health`
 
-O projeto inclui `docker-compose.evolution.yml` pronto.
+---
 
-### 1) Subir Evolution + Redis + Postgres
+## Autenticação
 
-```bash
-cd Codigo/Agrofarm/api
-docker compose -f docker-compose.evolution.yml up -d
+Todas as rotas (exceto login, cadastro, recuperação de senha e health) exigem header:
+
+```http
+Authorization: Bearer <token>
 ```
 
-Por padrão:
-- Evolution em `http://localhost:8080`
-- `AUTHENTICATION_API_KEY=agrofarm-evolution-dev-key-2026`
+### Endpoints de sessão
 
-### 2) Validar status no backend
+| Método | Rota | Descrição |
+| ------ | ---- | --------- |
+| `POST` | `/api/auth/login` | Login — retorna `token`, `usuario` e `menu` |
+| `POST` | `/api/auth/cadastro` | Cadastro (ADMIN cria usuários) |
+| `POST` | `/api/auth/logout` | Encerra sessão |
+| `GET` | `/api/auth/me` | Dados do usuário autenticado + menu |
+| `POST` | `/api/auth/esqueci-senha` | Envia link de redefinição por e-mail |
+| `POST` | `/api/auth/redefinir-senha` | Redefine senha com token |
 
-```bash
-GET /api/lembretes/whatsapp/status
-```
-
-### 3) Provisionar instância e gerar QR Code
-
-Via endpoint:
-
-```bash
-POST /api/lembretes/whatsapp/provisionar
-```
-
-Body opcional:
+### Contrato de login
 
 ```json
-{ "numero": "5531999999999" }
+{
+  "token": "jwt...",
+  "usuario": {
+    "id": "uuid",
+    "nome": "Nome",
+    "email": "email@dominio.com",
+    "role": "ADMIN",
+    "telefone": "31999999999",
+    "fazendasVinculadas": [{ "id": "uuid", "nome": "Fazenda A" }]
+  },
+  "menu": [{ "id": "dashboard", "label": "Dashboard", "path": "/", "icon": "dashboard", "children": [] }]
+}
 ```
 
-Ou via script:
+**Cadastro:** `FUNCIONARIO` exige `fazendaIds` com ao menos uma fazenda. `ADMIN` pode omitir.
+
+---
+
+## Módulos da API
+
+| Prefixo | Domínio |
+| ------- | ------- |
+| `/api/auth` | Autenticação e sessão |
+| `/api/usuarios` | Gestão de usuários (ADMIN) |
+| `/api/fazendas` | Fazendas, culturas vinculadas, histórico de mapa |
+| `/api/culturas` | Catálogo global de culturas |
+| `/api/poligonos` | Talhões georreferenciados |
+| `/api/colheitas` | Colheitas por safra |
+| `/api/gastos` | Gastos operacionais |
+| `/api/lucros` | Vendas e arrendamento |
+| `/api/estoque` | Saldo de sacas e entregas de arrendamento |
+| `/api/insumos` | Registro de insumos/atividades |
+| `/api/lembretes` | Lembretes, calendário, WhatsApp |
+| `/api/dashboard` | KPIs e gráficos consolidados |
+| `/api/cotacao` | Dólar, euro e painel de mercado |
+| `/api/simulacao` | Simulação de abatimento de dívida |
+| `/api/ia` | Insights inteligentes (Gemini) |
+| `/api/chatbot` | Chat IA com sessões persistentes |
+| `/api/notificacoes` | Notificações in-app |
+| `/api/noticias` | Feed de notícias agro |
+
+---
+
+## WhatsApp (Evolution API)
 
 ```bash
+docker compose -f docker-compose.evolution.yml up -d
 npm run evolution:provisionar -- 5531999999999
 ```
 
-Depois, escaneie o QR com o WhatsApp que será o número remetente da instância.
+| Método | Rota | Descrição |
+| ------ | ---- | --------- |
+| `GET` | `/api/lembretes/whatsapp/status` | Status da instância |
+| `POST` | `/api/lembretes/whatsapp/provisionar` | Cria instância + QR Code |
+| `POST` | `/api/lembretes/:id/enviar` | Envio manual imediato |
 
-## 🔑 Variáveis de ambiente da API
+---
 
-Obrigatórias:
-- `PORT`
-- `DATABASE_URL`
-- `DIRECT_URL`
-- `JWT_SECRET`
-- `JWT_EXPIRES_IN`
-- `CORS_ORIGIN`
-
-Integrações:
-- `EVOLUTION_API_URL`
-- `EVOLUTION_API_KEY`
-- `EVOLUTION_INSTANCE`
-- `GEMINI_API_KEY`
-
-## 🧪 Endpoints principais de lembretes/WhatsApp
-
-- `GET /api/health`
-- `GET /api/lembretes`
-- `GET /api/lembretes/:id`
-- `POST /api/lembretes`
-- `PUT /api/lembretes/:id`
-- `DELETE /api/lembretes/:id`
-- `POST /api/lembretes/:id/enviar`
-- `GET /api/lembretes/whatsapp/status`
-- `POST /api/lembretes/whatsapp/provisionar`
-
-## 🔐 Endpoints de autenticação e sessão
-
-- `POST /api/auth/login`
-- `POST /api/auth/cadastro`
-- `POST /api/auth/logout`
-- `POST /api/auth/esqueci-senha`
-- `POST /api/auth/redefinir-senha`
-- `GET /api/auth/me`
-
-### Contrato de sessão autenticada
-
-`POST /api/auth/login` e `GET /api/auth/me` retornam:
-
-```json
-{
-	"token": "jwt-opcional-em-auth-me",
-	"usuario": {
-		"id": "uuid",
-		"nome": "Nome",
-		"email": "email@dominio.com",
-		"role": "ADMIN|FUNCIONARIO",
-		"telefone": "31999999999",
-		"criadoEm": "2026-04-25T00:00:00.000Z",
-		"fazendasVinculadas": [{ "id": "uuid", "nome": "Fazenda A" }]
-	},
-	"menu": [
-		{
-			"id": "dashboard",
-			"label": "Dashboard",
-			"path": "/",
-			"icon": "dashboard",
-			"children": []
-		}
-	]
-}
-```
-
-Observacao:
-- Em `GET /api/auth/me`, o campo `token` nao e retornado.
-
-### Cadastro de usuário com vínculos de fazenda
-
-`POST /api/auth/cadastro` aceita:
-
-```json
-{
-	"nome": "Usuario",
-	"email": "usuario@agrofarm.com",
-	"senha": "123456",
-	"role": "ADMIN|FUNCIONARIO",
-	"telefone": "31999999999",
-	"fazendaIds": ["uuid-fazenda-1", "uuid-fazenda-2"]
-}
-```
-
-Regra:
-- `FUNCIONARIO` exige ao menos 1 item em `fazendaIds`.
-- `ADMIN` pode enviar `fazendaIds` vazio.
-
-## 📋 Scripts
+## Scripts
 
 | Script | Descrição |
-|--------|-----------|
-| `npm run dev` | Desenvolvimento com `node --watch` |
-| `npm start` | Execução padrão |
-| `npm run lint` | ESLint em `src` |
+| ------ | --------- |
+| `npm run dev` | Desenvolvimento com hot reload |
+| `npm start` | Produção |
 | `npm test` | Vitest |
-| `npm run test:coverage` | Cobertura de testes |
-| `npm run db:pull` | Prisma db pull |
+| `npm run test:coverage` | Cobertura |
+| `npm run lint` | ESLint |
 | `npm run db:generate` | Prisma generate |
 | `npm run db:studio` | Prisma Studio |
-| `npm run db:seed` | Seed inicial |
-| `npm run evolution:status` | Estado da conexão da instância |
-| `npm run evolution:provisionar -- <numero>` | Cria instância e retorna QR/pairing |
-| `npm run evolution:conectar` | Requisita novo QR/pairing |
+| `npm run db:seed` | Seed administrador |
+| `npm run evolution:status` | Status WhatsApp |
+| `npm run evolution:provisionar -- <numero>` | Provisionar instância |
+
+---
+
+## Variáveis de ambiente
+
+Consulte [`.env.example`](.env.example) para a lista completa. Principais:
+
+```env
+PORT=3333
+DATABASE_URL=
+DIRECT_URL=
+JWT_SECRET=
+JWT_EXPIRES_IN=7d
+CORS_ORIGIN=http://localhost:5173
+GEMINI_API_KEY_CHATBOT=
+GEMINI_API_KEY_INSIGHTS=
+EVOLUTION_API_URL=http://localhost:8080
+EVOLUTION_API_KEY=
+EVOLUTION_INSTANCE=agrofarm
+```
+
+---
+
+## Padrão de erros
+
+```json
+{
+  "status": "error",
+  "message": "Descrição clara do problema"
+}
+```
+
+| Código | Situação |
+| ------ | -------- |
+| 400 | Dados inválidos ou regra de negócio violada |
+| 401 | Não autenticado |
+| 403 | Sem permissão |
+| 404 | Recurso não encontrado |
+| 409 | Conflito (ex.: nome duplicado) |
+| 500 | Erro interno |

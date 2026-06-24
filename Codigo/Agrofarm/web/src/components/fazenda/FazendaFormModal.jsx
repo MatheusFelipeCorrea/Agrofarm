@@ -5,6 +5,7 @@ import AgroFormDialog from "../dialogs/AgroFormDialog.jsx";
 import { HomeIcon } from "../ui/icons.jsx";
 import FazendaArrendamentoFields from "./FazendaArrendamentoFields.jsx";
 import LocationSearchField from "./LocationSearchField.jsx";
+import { listarCulturas } from "../../services/cultura/cultura.service.js";
 import {
   buildFazendaPayload,
   mapFazendaToForm,
@@ -26,12 +27,20 @@ export default function FazendaFormModal({
   const isEdit = Boolean(fazenda?.id);
   const [form, setForm] = useState(mapFazendaToForm(fazenda));
   const [localError, setLocalError] = useState("");
+  const [culturas, setCulturas] = useState([]);
 
   useEffect(() => {
     if (!open) return;
     setForm(mapFazendaToForm(fazenda));
     setLocalError("");
   }, [open, fazenda?.id, fazenda?.nome, fazenda?.tipo, fazenda?.ativa, fazenda?.localizacao]);
+
+  useEffect(() => {
+    if (!open) return;
+    listarCulturas()
+      .then((data) => setCulturas(Array.isArray(data) ? data : data?.items ?? []))
+      .catch(() => setCulturas([]));
+  }, [open]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -154,7 +163,12 @@ export default function FazendaFormModal({
           </div>
 
           {form.tipo === "ARRENDADA_PARA_TERCEIROS" ? (
-            <FazendaArrendamentoFields form={form} setForm={setForm} onFieldChange={() => setLocalError("")} />
+            <FazendaArrendamentoFields
+              form={form}
+              setForm={setForm}
+              culturas={culturas}
+              onFieldChange={() => setLocalError("")}
+            />
           ) : null}
         </div>
 

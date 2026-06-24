@@ -73,8 +73,9 @@ describe("web HTTP services", () => {
   });
 
   it("poligono.service lista por fazenda", async () => {
-    api.get.mockResolvedValue({ data: { data: [] } });
-    await listarPoligonos("faz-1");
+    api.get.mockResolvedValue({ data: { data: [], meta: { colheitasArquivadas: 0 } } });
+    const resultado = await listarPoligonos("faz-1");
+    expect(resultado.poligonos).toEqual([]);
     expect(api.get).toHaveBeenCalledWith("/poligonos", { params: { fazendaId: "faz-1" } });
   });
 });

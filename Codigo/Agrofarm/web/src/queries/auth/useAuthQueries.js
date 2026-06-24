@@ -2,7 +2,13 @@ import { useMutation } from "@tanstack/react-query";
 import { notify } from "../../lib/notify.js";
 import { apiSuccessToast } from "../../lib/mutationProps.js";
 import { getApiErrorMessage } from "../../utils/apiError.js";
-import { login, PasswordChangeRequiredError, changeInitialPassword } from "../../services/auth/auth.service.js";
+import {
+  login,
+  PasswordChangeRequiredError,
+  changeInitialPassword,
+  changePassword,
+} from "../../services/auth/auth.service.js";
+import { useAuthStore } from "../../store/authStore.js";
 
 export function useLogin() {
   return useMutation({
@@ -18,9 +24,18 @@ export function useLogin() {
 export function useChangeInitialPassword() {
   return useMutation({
     mutationFn: changeInitialPassword,
-    onError(error) {
-      notify.error(getApiErrorMessage(error, "Não foi possível alterar a senha."));
-    },
     ...apiSuccessToast("Senha atualizada. Bem-vindo!", { duration: 2800 }),
+  });
+}
+
+export function useChangePassword() {
+  const setSession = useAuthStore((s) => s.setSession);
+
+  return useMutation({
+    mutationFn: changePassword,
+    onSuccess: (data) => {
+      setSession(data);
+    },
+    ...apiSuccessToast("Senha alterada com sucesso.", { duration: 3200 }),
   });
 }

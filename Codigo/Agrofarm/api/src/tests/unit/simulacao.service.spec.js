@@ -18,6 +18,12 @@ vi.mock("../../repositories/gasto.repository.js", () => ({
   },
 }));
 
+vi.mock("../../repositories/lucro.repository.js", () => ({
+  lucroRepository: {
+    buscarTotalComFiltros: vi.fn(),
+  },
+}));
+
 vi.mock("../../services/taxEstimator.service.js", () => ({
   taxEstimatorService: {
     estimarTaxas: vi.fn(),
@@ -41,6 +47,7 @@ const axios = (await import("axios")).default;
 const { simulacaoService } = await import("../../services/simulacao.service.js");
 const { dashboardRepository } = await import("../../repositories/dashboard.repository.js");
 const { gastoRepository } = await import("../../repositories/gasto.repository.js");
+const { lucroRepository } = await import("../../repositories/lucro.repository.js");
 const { taxEstimatorService } = await import("../../services/taxEstimator.service.js");
 const { simulacaoRepository } = await import("../../repositories/simulacao.repository.js");
 const { cotacaoService } = await import("../../services/cotacao.service.js");
@@ -64,6 +71,7 @@ describe("simulacaoService", () => {
       totalPendente: 800,
       totalGasto: 1000,
     });
+    lucroRepository.buscarTotalComFiltros.mockResolvedValue({ totalLucro: 1500 });
     taxEstimatorService.estimarTaxas.mockResolvedValue({
       percentual: 0.06,
       itens: [
@@ -99,7 +107,28 @@ describe("simulacaoService", () => {
       fazendasPermitidas: [],
     });
     expect(resultado.totais.totalPendente).toBe(800);
+    expect(resultado.lucro.totalLucro).toBe(1500);
     expect(resultado.escopo).toEqual({ tipo: "fazenda", fazendaId: "faz-1" });
+  });
+
+  it("calcula cenario com multiplas linhas e abate divida agregada", async () => {
+    simulacaoRepository.buscarCulturaPorId.mockResolvedValue({ id: "c1", nome: "Cafe" });
+
+    const resultado = await simulacaoService.calcularSacas({
+      usuario: { id: "u1", role: "ADMIN" },
+      payload: {
+        fazendaId: "faz-1",
+        linhas: [
+          { culturaId: "c1", quantidadeSacas: 10, valorSaca: 20, isExportacao: true, moeda: "USD" },
+          { culturaId: "c1", quantidadeSacas: 5, valorSaca: 10, isExportacao: false },
+        ],
+      },
+    });
+
+    expect(resultado.linhas).toHaveLength(2);
+    expect(resultado.resultado.valorLiquido).toBeGreaterThan(0);
+    expect(resultado.resultado.abatimentoAplicado).toBeLessThanOrEqual(800);
+    expect(resultado.lucro.restanteAposAbatimento).toBeGreaterThanOrEqual(0);
   });
 
   it("bloqueia acesso para nao admin", async () => {
@@ -151,8 +180,7 @@ describe("simulacaoService", () => {
       }),
     );
 
-    expect(resultado.composicaoTaxas.fonte).toBe("api-externa");
-    expect(resultado.composicaoTaxas.valorTotal).toBe(120);
+    expect(resultado.linhas[0].composicaoTaxas.fonte).toBe("api-externa");
     expect(resultado.resultado.taxasEImpostos).toBe(120);
     expect(resultado.resultado.valorBruto).toBe(5200);
     expect(resultado.resultado.valorLiquido).toBe(5080);
@@ -182,7 +210,7 @@ describe("simulacaoService", () => {
       },
     });
 
-    expect(resultado.composicaoTaxas.fonte).toBe("estimativa-interna");
+    expect(resultado.linhas[0].composicaoTaxas.fonte).toBe("estimativa-interna");
     expect(resultado.resultado.taxasEImpostos).toBe(60);
     expect(resultado.resultado.valorBruto).toBe(5200);
     expect(resultado.resultado.valorLiquido).toBe(5140);

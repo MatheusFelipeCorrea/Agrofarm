@@ -18,6 +18,7 @@ vi.mock("../../database/client.js", () => ({
     fazendas: { findMany: vi.fn(), findUnique: vi.fn() },
     colheitas: { findFirst: vi.fn(), findUnique: vi.fn() },
     lucros: { aggregate: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
+    entregas_arrendamento: { aggregate: vi.fn() },
     notificacoes: { deleteMany: vi.fn() },
   },
 }));
@@ -38,6 +39,7 @@ describe("lucroService", () => {
     vi.clearAllMocks();
     prisma.fazendas.findMany.mockResolvedValue([]);
     prisma.fazendas.findUnique.mockResolvedValue({ id: "faz-1", tipo: "PROPRIA" });
+    prisma.entregas_arrendamento.aggregate.mockResolvedValue({ _sum: { quantidade_sacas: 0 } });
   });
 
   it("listar exige fazendas vinculadas para funcionario", async () => {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import logoBranca from "../../../assets/img/AgroFarmBranca.png";
 import { logout } from "../../../services/auth/auth.service.js";
 import { useAuthStore } from "../../../store/authStore.js";
@@ -310,7 +310,7 @@ export default function Header({ onToggleSidebar, hideHeaderInput = false }) {
                       disabled={marcarTodasComoLidasMutation.isPending}
                       title={
                         temArrendamentoPendente
-                          ? "Arrendamento pendente só some ao confirmar recebimento em Lucros"
+                          ? "Arrendamento pendente só some ao confirmar a saída no Estoque"
                           : undefined
                       }
                     >
@@ -324,7 +324,7 @@ export default function Header({ onToggleSidebar, hideHeaderInput = false }) {
                     {unreadCount - unreadMarcaveis}{" "}
                     {unreadCount - unreadMarcaveis === 1 ? "notificação" : "notificações"} de arrendamento
                     permanecem até você
-                    confirmar o recebimento em Lucros.
+                    confirmar a saída no Estoque.
                   </p>
                 ) : null}
 
@@ -475,9 +475,18 @@ export default function Header({ onToggleSidebar, hideHeaderInput = false }) {
 
           <div className="mt-4 h-px w-full bg-white/20" />
 
+          <Link
+            to="/alterar-senha"
+            className="mt-4 flex items-center gap-3 rounded-xl px-4 py-3 text-left text-white/90 transition-colors hover:bg-white/10"
+            onClick={() => setMenuOpen(false)}
+          >
+            <IconUserOutline className="h-5 w-5" />
+            <span className="text-sm font-medium">Alterar senha</span>
+          </Link>
+
           <button
             type="button"
-            className="mt-4 flex items-center gap-3 rounded-xl px-4 py-3 text-left text-white/90 transition-colors hover:bg-white/10"
+            className="mt-2 flex items-center gap-3 rounded-xl px-4 py-3 text-left text-white/90 transition-colors hover:bg-white/10"
             onClick={handleLogout}
           >
             <LogoutIcon className="h-5 w-5" />

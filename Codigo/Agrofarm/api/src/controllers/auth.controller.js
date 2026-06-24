@@ -59,14 +59,21 @@ export const authController = {
 
     esqueciSenha: async (req, res, next) => {
         try {
-            await authService.esqueciSenha(req.body)
+            const resultado = await authService.esqueciSenha(req.body)
 
             return res.status(200).json({
                 message: 'Se o email estiver cadastrado, você receberá o link em breve',
+                emailEnviado: resultado.emailEnviado,
+                emailConfigurado: resultado.emailConfigurado,
+                ...(resultado.linkRedefinicao ? { linkRedefinicao: resultado.linkRedefinicao } : {}),
             })
         } catch (error) {
             next(error)
         }
+    },
+
+    recuperacaoConfig: async (_req, res) => {
+        return res.status(200).json(authService.obterConfigRecuperacao())
     },
 
     redefinirSenha: async (req, res, next) => {
@@ -84,6 +91,20 @@ export const authController = {
     changeInitialPassword: async (req, res, next) => {
         try {
             const { token, usuario, menu } = await authService.changeInitialPassword(req.body)
+
+            return res.status(200).json({
+                token,
+                usuario: usuarioView.render(usuario),
+                menu,
+            })
+        } catch (error) {
+            next(error)
+        }
+    },
+
+    changePassword: async (req, res, next) => {
+        try {
+            const { token, usuario, menu } = await authService.changePassword(req.usuario.id, req.body)
 
             return res.status(200).json({
                 token,

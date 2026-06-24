@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiErrorToast, apiSuccessToast } from "../../lib/mutationProps.js";
 import {
-  confirmarArrendamentoRecebimento,
   createGasto,
   deleteGasto,
   getGastosResumo,
@@ -58,20 +57,5 @@ export function useDeleteGastoMutation() {
     ...apiErrorToast("Não foi possível excluir o gasto."),
     ...apiSuccessToast("Gasto excluído."),
     onSettled: () => queryClient.invalidateQueries({ queryKey: GASTO_QUERY_KEY }),
-  });
-}
-
-export function useConfirmarArrendamentoGastoMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: confirmarArrendamentoRecebimento,
-    ...apiErrorToast("Não foi possível confirmar o recebimento."),
-    ...apiSuccessToast("Recebimento confirmado e registrado em Lucros."),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: GASTO_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["lucros"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["notificacoes"] });
-    },
   });
 }

@@ -1,13 +1,6 @@
 import { gastoService } from "../services/gasto.service.js";
 import { gastoView } from "../views/gasto.view.js";
 
-function renderItemListaGastos(item) {
-  if (gastoService.isLucroArrendamentoPendente(item)) {
-    return gastoView.renderArrendamentoPendente(item);
-  }
-  return gastoView.render(item);
-}
-
 async function getAll(req, res, next) {
   try {
     const usuarioId = req.usuario?.id;
@@ -21,23 +14,11 @@ async function getAll(req, res, next) {
     res.json({
       status: "success",
       data: {
-        items: result.items.map(renderItemListaGastos),
+        items: result.items.map((item) => gastoView.render(item)),
         totals: gastoView.renderResumo(result.totals),
         meta: result.meta,
       },
     });
-  } catch (error) {
-    next(error);
-  }
-}
-
-async function confirmarArrendamento(req, res, next) {
-  try {
-    await gastoService.confirmarRecebimentoArrendamento({
-      role: req.usuario?.role,
-      lucroId: req.params.lucroId,
-    });
-    res.json({ status: "success", data: { confirmado: true } });
   } catch (error) {
     next(error);
   }
@@ -129,7 +110,6 @@ export const gastoController = {
   getAll,
   getResumo,
   getPorColheita,
-  confirmarArrendamento,
   create,
   update,
   delete: remove,
@@ -138,4 +118,3 @@ export const gastoController = {
   atualizar: update,
   remover: remove,
 };
-

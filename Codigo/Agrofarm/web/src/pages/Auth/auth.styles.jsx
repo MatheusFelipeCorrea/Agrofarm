@@ -1,12 +1,11 @@
 import styled from "styled-components";
-import tractorBg from "../../assets/img/tractor-working-green-field.jpg";
 
-/* --- Container (fundo "hero" do auth) */
+/* ─── Container (fundo “hero” do auth) ─────────────────────── */
 
 export const Container = styled.div`
   height: 100vh;
   width: 100%;
-  background-image: url(${tractorBg});
+  background-image: url("/tractor-working-green-field.jpg");
   background-size: cover;
   background-position: center;
   display: flex;
@@ -22,7 +21,7 @@ export const Overlay = styled.div`
   background: radial-gradient(900px 700px at 20% 25%, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.65));
 `;
 
-/* --- Modal / Card */
+/* ─── Modal / Card ─────────────────────────────────────────── */
 
 export const Modal = styled.div`
   position: relative;
@@ -91,7 +90,7 @@ export const Modal = styled.div`
   }
 `;
 
-/* --- Input Group */
+/* ─── Input Group ──────────────────────────────────────────── */
 
 export const InputGroup = styled.div`
   margin-bottom: 15px;
@@ -149,19 +148,19 @@ export const InputGroup = styled.div`
     }
   }
 
-  /* Inputs com icone a esquerda (ex.: Login) */
+  /* Inputs com ícone à esquerda (ex.: Login) */
   input.input-with-left-icon {
     padding-left: 2.75rem;
   }
 
-  /* Alinhamento dos icones dentro dos inputs */
+  /* Alinhamento dos ícones dentro dos inputs */
   .relative span {
     top: 50%;
     transform: translateY(-50%);
   }
 `;
 
-/* --- Erro */
+/* ─── Erro ─────────────────────────────────────────────────── */
 
 export const ErrorMessage = styled.p`
   color: red;
@@ -169,7 +168,7 @@ export const ErrorMessage = styled.p`
   margin-top: 5px;
 `;
 
-/* --- Botao */
+/* ─── Botão ────────────────────────────────────────────────── */
 
 export const SubmitButton = styled.button`
   width: 100%;
@@ -204,7 +203,7 @@ export const SubmitButton = styled.button`
   }
 `;
 
-/* --- Links */
+/* ─── Links ────────────────────────────────────────────────── */
 
 export const EsqueciSenhaLink = styled.a`
   display: block;

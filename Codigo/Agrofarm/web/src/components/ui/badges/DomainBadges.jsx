@@ -72,32 +72,13 @@ export function LucroRecebimentoBadge({ status, className = "" }) {
   );
 }
 
-/** Coluna Situação na tabela de Lucros (venda, recebimento de arrendamento ou atrasado). */
-export function LucroSituacaoBadge({
-  origem,
-  statusRecebimento,
-  parcelaVencida = false,
-  className = "",
-}) {
-  const isArrendamento = origem === "ARRENDAMENTO";
-
-  if (!isArrendamento) {
-    return (
-      <SoftBadge tone={LUCRO_SITUACAO_VENDA.tone} className={className}>
-        {LUCRO_SITUACAO_VENDA.label}
-      </SoftBadge>
-    );
-  }
-
-  if (statusRecebimento === "PENDENTE" && parcelaVencida) {
-    return (
-      <SoftBadge tone={LUCRO_SITUACAO_ATRASADO.tone} className={className}>
-        {LUCRO_SITUACAO_ATRASADO.label}
-      </SoftBadge>
-    );
-  }
-
-  return <LucroRecebimentoBadge status={statusRecebimento} className={className} />;
+/** Coluna Situação na tabela de Lucros (venda). */
+export function LucroSituacaoBadge({ origem, className = "" }) {
+  return (
+    <SoftBadge tone={LUCRO_SITUACAO_VENDA.tone} className={className}>
+      {LUCRO_SITUACAO_VENDA.label}
+    </SoftBadge>
+  );
 }
 
 export function UsuarioRoleBadge({ role, className = "" }) {

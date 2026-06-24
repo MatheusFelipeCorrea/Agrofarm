@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout.jsx";
 import { notify } from "../../lib/notify.js";
 import { useAuthStore } from "../../store/authStore.js";
@@ -8,9 +9,14 @@ import Select from "../../components/ui/Select/Select.jsx";
 import { listarCulturas } from "../../services/cultura/cultura.service.js";
 import { listarFazendas } from "../../services/fazenda/fazenda.service.js";
 import { useColheitaListQuery } from "../../queries/colheita/useColheitaQueries.js";
-import { useEstoqueListQuery } from "../../queries/estoque/useEstoqueQueries.js";
+import {
+  useConfirmarEntregaArrendamentoMutation,
+  useEstoqueListQuery,
+  useMarcarEntregaArrendamentoMutation,
+} from "../../queries/estoque/useEstoqueQueries.js";
 import { FilterIcon, HandshakeIcon, SearchIcon } from "../../components/ui/icons.jsx";
 import EstoqueSummaryCards from "../../components/estoque/EstoqueSummaryCards.jsx";
+import EstoqueArrendamentoPanel from "../../components/estoque/EstoqueArrendamentoPanel.jsx";
 import AgroDataTableFooter from "../../components/ui/DataTable/AgroDataTableFooter.jsx";
 import {
   AgroDataTable,
@@ -56,7 +62,9 @@ function MovimentacoesRecentes({ items }) {
             <HandshakeIcon className="h-5 w-5" />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900">Venda</p>
+            <p className="text-sm font-semibold text-gray-900">
+              {m.tipo === "ARRENDAMENTO" ? "Arrendamento" : "Venda"}
+            </p>
             <p className="truncate text-xs text-gray-500">
               {m.lote} · {m.fazendaNome}
             </p>
@@ -72,8 +80,10 @@ function MovimentacoesRecentes({ items }) {
 }
 
 export default function Estoque() {
+  const [searchParams] = useSearchParams();
   const usuario = useAuthStore((s) => s.usuario);
   const isAdmin = usuario?.role === "ADMIN";
+  const focoArrendamento = searchParams.get("pendenteArrendamento") === "1";
 
   const [fazendas, setFazendas] = useState([]);
   const [culturas, setCulturas] = useState([]);
@@ -82,6 +92,10 @@ export default function Estoque() {
   const [filtersDirty, setFiltersDirty] = useState(false);
   const [page, setPage] = useState(1);
   const [detalheAberto, setDetalheAberto] = useState(null);
+  const [entregaBusyId, setEntregaBusyId] = useState(null);
+
+  const confirmarEntregaMutation = useConfirmarEntregaArrendamentoMutation();
+  const marcarEntregaMutation = useMarcarEntregaArrendamentoMutation();
 
   const { data: colheitas = [] } = useColheitaListQuery({});
 
@@ -97,10 +111,18 @@ export default function Estoque() {
 
   const { data, isError, error, isLoading } = useEstoqueListQuery(queryFilters);
 
+  const lotesQueryFilters = useMemo(
+    () => ({ ...(isAdmin ? { fazendaId: "all" } : {}), page: 1, pageSize: 100 }),
+    [isAdmin],
+  );
+  const { data: lotesData } = useEstoqueListQuery(lotesQueryFilters, { enabled: isAdmin });
+
   const items = data?.items ?? [];
   const meta = data?.meta ?? { page: 1, pageSize: PAGE_SIZE, totalItems: 0, totalPages: 1 };
   const resumo = data?.resumo ?? { totalEmEstoque: 0, totalVendido: 0, lotesEstoqueBaixo: 0 };
   const movimentacoesRecentes = data?.movimentacoesRecentes ?? [];
+  const arrendamentosPendentes = data?.arrendamentosPendentes ?? [];
+  const lotesEstoque = lotesData?.items ?? [];
 
   const defaultFilters = useMemo(() => makeEmptyFilters(isAdmin), [isAdmin]);
 
@@ -180,6 +202,30 @@ export default function Estoque() {
   const start = meta.totalItems ? (meta.page - 1) * meta.pageSize + 1 : 0;
   const end = meta.totalItems ? Math.min(meta.page * meta.pageSize, meta.totalItems) : 0;
 
+  async function handleConfirmarEntrega({ entregaId, colheitaId }) {
+    setEntregaBusyId(entregaId);
+    try {
+      await confirmarEntregaMutation.mutateAsync({ entregaId, colheitaId });
+      notify.success("Saída de arrendamento registrada no estoque.");
+    } catch {
+      /* toast via mutation */
+    } finally {
+      setEntregaBusyId(null);
+    }
+  }
+
+  async function handleMarcarNaoEntregue(entregaId) {
+    setEntregaBusyId(entregaId);
+    try {
+      await marcarEntregaMutation.mutateAsync({ entregaId, status: "NAO_ENTREGUE" });
+      notify.success("Entrega marcada como não realizada.");
+    } catch {
+      /* toast via mutation */
+    } finally {
+      setEntregaBusyId(null);
+    }
+  }
+
   return (
     <MainLayout>
       <EstoqueDetalheModal
@@ -198,6 +244,25 @@ export default function Estoque() {
             Controle o estoque de sacas de cada colheita e acompanhe o saldo disponível.
           </p>
         </header>
+
+        {focoArrendamento && isAdmin ? (
+          <div className="rounded-xl border border-violet-200 bg-violet-50/80 px-4 py-3 text-sm text-violet-900">
+            <p className="font-semibold">Confirme as entregas de arrendamento pendentes</p>
+            <p className="mt-1 text-violet-800/90">
+              Selecione o lote de origem e confirme a saída das sacas do estoque. A notificação só desaparece após
+              essa confirmação.
+            </p>
+          </div>
+        ) : null}
+
+        <EstoqueArrendamentoPanel
+          entregas={arrendamentosPendentes}
+          lotesEstoque={lotesEstoque}
+          isAdmin={isAdmin}
+          busyId={entregaBusyId}
+          onConfirmar={handleConfirmarEntrega}
+          onMarcarNaoEntregue={handleMarcarNaoEntregue}
+        />
 
         <section className="flex flex-wrap items-end gap-3">
           {isAdmin ? (

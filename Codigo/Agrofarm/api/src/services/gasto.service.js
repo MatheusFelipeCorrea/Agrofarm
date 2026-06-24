@@ -3,11 +3,6 @@ import { assertFazendaOperavelPorColheitaId } from "../shared/fazenda/fazendaOpe
 import { gastoRepository } from "../repositories/gasto.repository.js";
 import { usuarioRepository } from "../repositories/usuario.repository.js";
 import { notificacaoService } from "./notificacao.service.js";
-import { lucroService } from "./lucro.service.js";
-
-function isLucroArrendamentoPendente(item) {
-  return item?.origem === "ARRENDAMENTO" && item?.status_recebimento === "PENDENTE";
-}
 
 async function resolveFazendasPermitidas({ usuarioId, role }) {
   if (role === "ADMIN") return [];
@@ -68,14 +63,14 @@ async function getAll({ usuarioId, role, query }) {
   const page = query.page ?? 1;
   const pageSize = query.pageSize ?? 20;
 
-  const [lista, resumo, arrendamentosPendentes] = await Promise.all([
+  const [lista, resumo] = await Promise.all([
     gastoRepository.buscarTodosComFiltros({
       filters: filtros,
       role,
       usuarioId,
       fazendasPermitidas,
-      page: 1,
-      pageSize: 500,
+      page,
+      pageSize,
     }),
     gastoRepository.buscarResumoComFiltros({
       filters: filtros,
@@ -83,97 +78,25 @@ async function getAll({ usuarioId, role, query }) {
       usuarioId,
       fazendasPermitidas,
     }),
-    role === "ADMIN"
-      ? gastoRepository.buscarArrendamentosPendentes({
-          fazendaId: filtros.fazendaId,
-          page: 1,
-          pageSize: 200,
-        })
-      : Promise.resolve({ items: [], meta: { totalItems: 0 } }),
   ]);
 
-  let combined = lista.items;
-  if (role === "ADMIN" && arrendamentosPendentes.items.length) {
-    const statusFiltro = filtros.status;
-    const incluirArrendamento =
-      !statusFiltro || statusFiltro === "PENDENTE" || statusFiltro === "ATRASADO";
-    if (incluirArrendamento) {
-      let parcelas = arrendamentosPendentes.items;
-      if (statusFiltro === "ATRASADO") {
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-        parcelas = parcelas.filter((p) => {
-          const data = p.data ? new Date(p.data) : null;
-          return data && data < hoje;
-        });
-      }
-      combined = [...parcelas, ...lista.items];
-    }
-  }
-
-  combined.sort((a, b) => {
-    const da = new Date(a.data_vencimento ?? a.data ?? 0).getTime();
-    const db = new Date(b.data_vencimento ?? b.data ?? 0).getTime();
-    return db - da;
-  });
-
-  const totalItems = combined.length;
-  const skip = (page - 1) * pageSize;
-  const pageItems = combined.slice(skip, skip + pageSize);
-
   return {
-    items: pageItems,
-    meta: {
-      page,
-      pageSize,
-      totalItems,
-      totalPages: Math.max(1, Math.ceil(totalItems / pageSize)),
-    },
+    items: lista.items,
+    meta: lista.meta,
     totals: resumo,
   };
-}
-
-async function confirmarRecebimentoArrendamento({ role, lucroId }) {
-  if (role !== "ADMIN") {
-    throw new AppError("Apenas ADMIN pode confirmar recebimento de arrendamento", 403);
-  }
-
-  await lucroService.marcarRecebimentoArrendamento({
-    role,
-    id: lucroId,
-    status: "RECEBIDO",
-  });
 }
 
 async function getResumo({ usuarioId, role, query }) {
   const fazendasPermitidas = await resolveFazendasPermitidas({ usuarioId, role });
   const filtros = normalizeFiltros({ query, role });
 
-  const resumo = await gastoRepository.buscarResumoComFiltros({
+  return gastoRepository.buscarResumoComFiltros({
     filters: filtros,
     role,
     usuarioId,
     fazendasPermitidas,
   });
-
-  // Arrendamento a receber é RECEITA, não despesa. Mantemos o valor em um campo
-  // próprio para acompanhamento, sem poluir os totais de gasto/despesa.
-  resumo.totalArrendamentoPendente = 0;
-
-  if (role === "ADMIN") {
-    const statusFiltro = filtros.status;
-    const incluirArrendamento =
-      !statusFiltro || statusFiltro === "PENDENTE" || statusFiltro === "ATRASADO";
-    if (incluirArrendamento) {
-      const totalArrend = await gastoRepository.somarArrendamentosPendentes({
-        fazendaId: filtros.fazendaId,
-        onlyAtrasados: statusFiltro === "ATRASADO",
-      });
-      resumo.totalArrendamentoPendente = totalArrend;
-    }
-  }
-
-  return resumo;
 }
 
 async function getPorColheita({ usuarioId, role, colheitaId, query }) {
@@ -282,7 +205,6 @@ export const gastoService = {
   getAll,
   getResumo,
   getPorColheita,
-  confirmarRecebimentoArrendamento,
   create,
   update,
   delete: remove,
@@ -290,6 +212,4 @@ export const gastoService = {
   criar: create,
   atualizar: update,
   remover: remove,
-  isLucroArrendamentoPendente,
 };
-

@@ -34,3 +34,17 @@ export const listarEstoqueQuerySchema = z.object({
 export const estoqueColheitaParamsSchema = z.object({
     colheitaId: z.string().uuid('colheitaId inválido'),
 })
+
+export const confirmarArrendamentoSchema = z.object({
+    colheitaId: z.string().uuid('colheitaId inválido'),
+})
+
+export const marcarEntregaArrendamentoSchema = z.object({
+    status: z.enum(['NAO_ENTREGUE', 'PENDENTE'], {
+        errorMap: () => ({ message: 'Status deve ser NAO_ENTREGUE ou PENDENTE' }),
+    }),
+})
+
+export const entregaArrendamentoParamsSchema = z.object({
+    entregaId: z.string().uuid('entregaId inválido'),
+})

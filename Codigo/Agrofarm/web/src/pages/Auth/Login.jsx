@@ -7,6 +7,7 @@ import ChangeInitialPasswordModal from "../../components/auth/ChangeInitialPassw
 import { getApiErrorMessage } from "../../utils/apiError.js";
 import { loginSchema } from "../../utils/validators.js";
 import { getFirstAllowedPath } from "../../routes/routeAccess.js";
+import { DEFAULT_ADMIN_RESET_PASSWORD } from "../../constants/passwordDefaults.js";
 import logoImage from "../../assets/img/Agrofarm.png";
 import logoWhiteImage from "../../assets/img/AgroFarmBranca.png";
 import {
@@ -36,6 +37,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mostrarSenhaRedefinida] = useState(() => Boolean(location.state?.senhaRedefinida));
+  const [mostrarSenhaResetAdmin] = useState(() => Boolean(location.state?.senhaResetadaAdmin));
   const token = useAuthStore((s) => s.token);
   const menu = useAuthStore((s) => s.menu);
   const setSession = useAuthStore((s) => s.setSession);
@@ -48,7 +50,7 @@ export default function Login() {
   }, [token, menu, navigate]);
 
   useEffect(() => {
-    if (!location.state?.senhaRedefinida) return;
+    if (!location.state?.senhaRedefinida && !location.state?.senhaResetadaAdmin) return;
     navigate(location.pathname, { replace: true, state: {} });
   }, [location.state, location.pathname, navigate]);
 
@@ -223,6 +225,13 @@ export default function Login() {
                   {mostrarSenhaRedefinida ? (
                     <p className="mb-3 text-[13px] font-medium text-emerald-700">
                       Senha redefinida com sucesso. Entre com a nova senha.
+                    </p>
+                  ) : null}
+
+                  {mostrarSenhaResetAdmin ? (
+                    <p className="mb-3 text-[13px] font-medium text-amber-800">
+                      Sua senha foi redefinida. Entre com a senha temporária{" "}
+                      <span className="font-mono">{DEFAULT_ADMIN_RESET_PASSWORD}</span> e defina uma nova senha.
                     </p>
                   ) : null}
 

@@ -326,7 +326,7 @@ async function processarPendentes(dataReferencia = new Date()) {
   const candidatos = await prisma.lembretes.findMany({
     where: {
       AND: [
-        montarWhereLembretes({
+        ...montarWhereLembretes({
           inicio: janelaInicio,
           fim: janelaFim,
           fazendasFiltradas: null,

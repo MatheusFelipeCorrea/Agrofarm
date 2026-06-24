@@ -1,9 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { env } from "../config/env.js";
 import { AppError } from "../shared/errors/AppError.js";
-import {
-  resolverChaveGeminiChatbot,
-  validarFormatoChaveGemini,
-} from "../shared/gemini/geminiKey.js";
 import { logger } from "../shared/utils/logger.js";
 import { chatbotRepository } from "../repositories/chatbot.repository.js";
 import { chatbotView } from "../views/chatbot.view.js";
@@ -51,6 +48,35 @@ function formatarDataBR(valor) {
   const d = valor instanceof Date ? valor : new Date(valor);
   if (Number.isNaN(d.getTime())) return "—";
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(d);
+}
+
+function normalizarChaveGemini(valor) {
+  return String(valor ?? "")
+    .trim()
+    .replace(/\/\/.*$/, "")
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
+    .replace(/\s+/g, "");
+}
+
+/** Chave do chatbot; aceita GEMINI_API_KEY_CHATBOT, GEMINI_API_KEY_INSIGHTS ou GEMINI_API_KEY. */
+function resolverChaveGeminiChatbot() {
+  return (
+    normalizarChaveGemini(env.GEMINI_API_KEY_CHATBOT) ||
+    normalizarChaveGemini(env.GEMINI_API_KEY_INSIGHTS) ||
+    normalizarChaveGemini(env.GEMINI_API_KEY)
+  );
+}
+
+function validarFormatoChaveGemini(chave) {
+  if (!chave) return { ok: false, codigo: "vazia" };
+  if (!chave.startsWith("AIza")) {
+    return { ok: false, codigo: "prefixo", tamanho: chave.length };
+  }
+  if (chave.length < 35 || chave.length > 45) {
+    return { ok: false, codigo: "tamanho", tamanho: chave.length };
+  }
+  return { ok: true };
 }
 
 function erroGeminiEhChaveInvalida(err) {
@@ -445,7 +471,7 @@ export const chatbotService = {
           textoAssistente = construirRespostaSomenteDados(
             ctx,
             conteudo,
-            `A chave no .env parece incorreta (${tam ? `${tam} caracteres` : "formato inválido"}; use a chave copiada de https://aistudio.google.com/apikey — costuma começar com AIza ou AQ., sem aspas, espaços ou texto extra). Reinicie a API.`,
+            `A chave no .env parece incorreta (${tam ? `${tam} caracteres` : "formato inválido"}; o Google costuma gerar ~39 caracteres começando com AIza). Cole só a chave copiada de https://aistudio.google.com/apikey — sem aspas, sem espaços e sem texto extra (ex.: não acrescente "chatbot" no final). Reinicie a API.`,
           );
         } else if (ia.motivo === "chave_invalida") {
           textoAssistente = construirRespostaSomenteDados(

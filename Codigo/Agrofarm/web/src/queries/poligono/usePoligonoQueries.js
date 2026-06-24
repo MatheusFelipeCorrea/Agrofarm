@@ -11,10 +11,24 @@ import {
 
 export const QK_POLIGONOS = ["poligonos"];
 
+function invalidateColheitaRelacionadas(qc, fazendaId) {
+  qc.invalidateQueries({ queryKey: ["colheitas"] });
+  qc.invalidateQueries({ queryKey: ["dashboard"] });
+  qc.invalidateQueries({ queryKey: ["estoque"] });
+  qc.invalidateQueries({ queryKey: [...QK_HISTORICO_MAPA, fazendaId] });
+}
+
 export function usePoligonosQuery(fazendaId, options = {}) {
+  const qc = useQueryClient();
   return useQuery({
     queryKey: [...QK_POLIGONOS, fazendaId],
-    queryFn: () => listarPoligonos(fazendaId),
+    queryFn: async () => {
+      const resultado = await listarPoligonos(fazendaId);
+      if (resultado.colheitasArquivadas > 0) {
+        invalidateColheitaRelacionadas(qc, fazendaId);
+      }
+      return resultado.poligonos;
+    },
     enabled: Boolean(fazendaId),
     staleTime: 15_000,
     retry: 1,
@@ -58,7 +72,7 @@ export function useDeletePoligonoMutation(fazendaId) {
     ...apiSuccessToast("Área excluída com sucesso."),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: [...QK_POLIGONOS, fazendaId] });
-      qc.invalidateQueries({ queryKey: [...QK_HISTORICO_MAPA, fazendaId] });
+      invalidateColheitaRelacionadas(qc, fazendaId);
       qc.invalidateQueries({ queryKey: [...QK_FAZENDAS, fazendaId, "detalhe"] });
       qc.invalidateQueries({ queryKey: [...QK_FAZENDAS, fazendaId, "culturas"] });
       qc.invalidateQueries({ queryKey: QK_FAZENDAS });

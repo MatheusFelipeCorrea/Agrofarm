@@ -73,7 +73,7 @@ function writeGeoCacheEntry(fazendaId, coords) {
 
 async function coordsFromPoligonosFazenda(fazendaId) {
   try {
-    const poligonos = await listarPoligonos(fazendaId);
+    const { poligonos } = await listarPoligonos(fazendaId);
     if (!Array.isArray(poligonos) || poligonos.length === 0) return null;
 
     for (const pol of poligonos) {

@@ -6,7 +6,6 @@ import {
   buscarTodos,
   criar,
   deletar,
-  marcarRecebimentoArrendamento,
 } from "../../services/lucro/lucro.service.js";
 
 const LUCRO_QUERY_KEY = ["lucros"];
@@ -65,20 +64,5 @@ export function useDeleteLucroMutation() {
     ...apiErrorToast("Não foi possível excluir o lucro."),
     ...apiSuccessToast("Lucro excluído com sucesso."),
     onSettled: () => invalidateLucroRelated(queryClient),
-  });
-}
-
-export function useMarcarRecebimentoArrendamentoMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, status }) => marcarRecebimentoArrendamento(id, status),
-    ...apiErrorToast("Não foi possível atualizar o status do recebimento."),
-    ...apiSuccessToast("Status de recebimento atualizado."),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: LUCRO_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ["gastos"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["notificacoes"] });
-    },
   });
 }

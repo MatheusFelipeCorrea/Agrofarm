@@ -79,29 +79,26 @@ export const fazendaView = {
             somenteLeitura,
 
             arrendamento:
-
                 fazenda.tipo === 'ARRENDADA_PARA_TERCEIROS' &&
-
-                fazenda.arrendamento_valor != null &&
-
+                fazenda.arrendamento_cultura_id &&
+                fazenda.arrendamento_quantidade_sacas != null &&
                 fazenda.arrendamento_periodicidade &&
-
                 fazenda.arrendamento_data_inicio
-
                     ? {
-
-                          valor: Number(fazenda.arrendamento_valor),
-
+                          culturaId: fazenda.arrendamento_cultura_id,
+                          cultura: fazenda.arrendamento_culturas
+                              ? {
+                                    id: fazenda.arrendamento_culturas.id,
+                                    nome: fazenda.arrendamento_culturas.nome,
+                                    cor: fazenda.arrendamento_culturas.cor,
+                                }
+                              : null,
+                          quantidadeSacas: Number(fazenda.arrendamento_quantidade_sacas),
                           periodicidade: fazenda.arrendamento_periodicidade,
-
                           dataInicio:
-
                               fazenda.arrendamento_data_inicio?.toISOString?.().slice(0, 10) ??
-
                               fazenda.arrendamento_data_inicio,
-
                       }
-
                     : null,
 
             hectares: hectaresTotal,

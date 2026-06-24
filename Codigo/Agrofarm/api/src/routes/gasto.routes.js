@@ -17,11 +17,6 @@ gastoRoutes.use(authMiddleware);
 
 gastoRoutes.get("/", validator({ query: listarGastosQuerySchema }), gastoController.getAll);
 gastoRoutes.get("/resumo", validator({ query: listarGastosQuerySchema }), gastoController.getResumo);
-gastoRoutes.patch(
-  "/arrendamento/:lucroId/confirmar-recebimento",
-  validator({ params: z.object({ lucroId: z.string().uuid("lucroId inválido") }) }),
-  gastoController.confirmarArrendamento,
-);
 gastoRoutes.get(
   "/colheita/:colheitaId",
   validator({ params: getPorColheitaParamsSchema, query: listarGastosQuerySchema }),

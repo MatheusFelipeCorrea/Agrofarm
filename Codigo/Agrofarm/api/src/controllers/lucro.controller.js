@@ -103,29 +103,11 @@ async function deleteLucro(req, res, next) {
     }
 }
 
-async function marcarRecebimentoArrendamento(req, res, next) {
-    try {
-        const lucro = await lucroService.marcarRecebimentoArrendamento({
-            role: req.usuario?.role,
-            id: req.params.id,
-            status: req.body.status,
-        })
-
-        res.json({
-            status: 'success',
-            data: lucroView.render(lucro),
-        })
-    } catch (error) {
-        next(error)
-    }
-}
-
 export const lucroController = {
     getAll,
     getTotal,
     getPorColheita,
     create,
     update,
-    marcarRecebimentoArrendamento,
     delete: deleteLucro,
 }

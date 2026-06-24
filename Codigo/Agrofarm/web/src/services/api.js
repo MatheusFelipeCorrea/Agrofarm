@@ -33,6 +33,13 @@ api.interceptors.response.use(
       }
     }
 
+    if (status === 403 && url.includes("/auth/me")) {
+      useAuthStore.getState().clearSession();
+      if (!path.startsWith("/login")) {
+        window.location.assign("/login");
+      }
+    }
+
     return Promise.reject(error);
   },
 );

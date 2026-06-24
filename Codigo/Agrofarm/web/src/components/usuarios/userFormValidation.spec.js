@@ -83,6 +83,7 @@ describe("validateUsuarioFormForSubmit", () => {
     expect(result.update?.payload).toEqual({
       nome: "Funcionario",
       email: "func@agrofarm.com",
+      telefone: null,
       role: "FUNCIONARIO",
       fazendaIds: ["faz-1"],
       resetPasswordToDefault: true,
@@ -109,6 +110,7 @@ describe("validateUsuarioFormForSubmit", () => {
         nome: "Admin",
         email: "admin@agrofarm.com",
         role: "ADMIN",
+        telefone: null,
         fazendaIds: [],
       },
     });

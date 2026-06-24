@@ -98,7 +98,9 @@ export const authRepository = {
                 must_change_password: false,
                 token_reset: null,
                 token_reset_expira: null,
+                token_version: { increment: 1 },
             },
+            include: usuarioWithFazendasInclude,
         })
     },
 
@@ -110,6 +112,7 @@ export const authRepository = {
                 must_change_password: false,
                 token_reset: null,
                 token_reset_expira: null,
+                token_version: { increment: 1 },
             },
             include: usuarioWithFazendasInclude,
         })

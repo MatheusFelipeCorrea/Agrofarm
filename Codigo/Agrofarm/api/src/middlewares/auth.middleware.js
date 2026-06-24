@@ -31,6 +31,17 @@ export const authMiddleware = async (req, res, next) => {
       throw new AppError("Sessão inválida. Faça login novamente.", 401);
     }
 
+    const tokenVersionJwt = decoded.tokenVersion ?? 0;
+    const tokenVersionDb = usuarioDb.token_version ?? 0;
+
+    if (tokenVersionJwt !== tokenVersionDb) {
+      throw new AppError("Sessão inválida. Faça login novamente.", 401);
+    }
+
+    if (usuarioDb.must_change_password) {
+      throw new AppError("E necessario definir uma nova senha antes de acessar o sistema", 403);
+    }
+
     req.usuario = {
       id: usuarioDb.id,
       nome: usuarioDb.nome,

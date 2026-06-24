@@ -1,5 +1,6 @@
 import "../../styles/gerenciamento-usuarios.css";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DeleteUserModal from "../../components/usuarios/DeleteUserModal.jsx";
 import UserFormModal from "../../components/usuarios/UserFormModal.jsx";
 import UsuariosTable from "../../components/usuarios/UsuariosTable.jsx";
@@ -16,6 +17,7 @@ import { notify } from "../../lib/notify.js";
 import { getApiErrorMessage } from "../../utils/apiError.js";
 import Button from "../../components/ui/Button/Button.jsx";
 import { useAuthStore } from "../../store/authStore.js";
+import { DEFAULT_ADMIN_RESET_PASSWORD } from "../../constants/passwordDefaults.js";
 import Input from "../../components/ui/Input/Input.jsx";
 import Select from "../../components/ui/Select/Select.jsx";
 import { FilterIcon, PlusIcon } from "../../components/ui/icons.jsx";
@@ -36,6 +38,8 @@ export default function GerenciarUsuarios() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const usuarioLogadoId = useAuthStore((s) => s.usuario?.id);
+  const clearSession = useAuthStore((s) => s.clearSession);
+  const navigate = useNavigate();
 
   const { data: usuarios = [], isLoading, isError, error } = useUsuarioListQuery();
   const { data: fazendasDisponiveis = [] } = useFazendaListQuery();
@@ -127,6 +131,23 @@ export default function GerenciarUsuarios() {
         await createMutation.mutateAsync(result.create);
       } else if (result.update) {
         await updateMutation.mutateAsync(result.update);
+
+        if (result.update.payload.resetPasswordToDefault) {
+          if (result.update.id === usuarioLogadoId) {
+            closeFormModal();
+            clearSession();
+            navigate("/login", {
+              replace: true,
+              state: { senhaResetadaAdmin: true },
+            });
+            return;
+          }
+
+          notify.info(
+            `Senha redefinida. Informe ao usuário a senha temporária ${DEFAULT_ADMIN_RESET_PASSWORD} — ela precisará trocá-la no próximo login.`,
+            { id: "usuario-reset-senha", duration: 8000 },
+          );
+        }
       }
       closeFormModal();
     } catch (err) {
@@ -140,8 +161,8 @@ export default function GerenciarUsuarios() {
     try {
       await deleteMutation.mutateAsync(deleteTarget.id);
       closeDeleteModal();
-    } catch {
-      /* Erro da API: toast via React Query. */
+    } catch (err) {
+      setDeleteError(getApiErrorMessage(err, "Não foi possível excluir o usuário."));
     }
   }
 

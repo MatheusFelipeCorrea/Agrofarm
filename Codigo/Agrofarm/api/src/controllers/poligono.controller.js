@@ -24,14 +24,19 @@ export const poligonoController = {
             // Arquiva na hora os talhões cuja data de colheita já passou (anuais saem
             // do mapa; café renova o ciclo), garantindo que a listagem reflita o estado
             // correto sem depender do job diário.
+            let arquivamento = { processados: 0 }
             try {
-                await poligonoHistoricoService.processarColheitasVencidas(fazendaId)
+                arquivamento = await poligonoHistoricoService.processarColheitasVencidas(fazendaId)
             } catch (erro) {
                 logger.error({ err: erro, fazendaId }, 'Falha ao arquivar colheitas vencidas ao listar talhões')
             }
 
             const poligonos = await poligonoService.buscarPorFazenda(fazendaId)
-            res.json({ status: 'success', data: poligonos })
+            res.json({
+                status: 'success',
+                data: poligonos,
+                meta: { colheitasArquivadas: arquivamento.processados ?? 0 },
+            })
         } catch (error) {
             next(error)
         }

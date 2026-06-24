@@ -15,7 +15,6 @@ import {
   useGastoListQuery,
   useGastoResumoQuery,
   useUpdateGastoMutation,
-  useConfirmarArrendamentoGastoMutation,
 } from "../../queries/gasto/useGastoQueries.js";
 import { useCreateLembreteMutation } from "../../queries/lembrete/useLembreteQueries.js";
 import { FilterIcon, PlusIcon } from "../../components/ui/icons.jsx";
@@ -74,7 +73,6 @@ export default function Gastos() {
   const createGasto = useCreateGastoMutation();
   const updateGasto = useUpdateGastoMutation();
   const deleteGasto = useDeleteGastoMutation();
-  const confirmarArrendamento = useConfirmarArrendamentoGastoMutation();
   const createLembrete = useCreateLembreteMutation();
 
   const { data: colheitas = [] } = useColheitaListQuery({});
@@ -286,18 +284,11 @@ export default function Gastos() {
   };
 
   const handleMarcarPago = async (row) => {
-    const rowKey = row?.lucroId ?? row?.id;
-    if (!rowKey || row.status === "PAGO") return;
+    if (!row?.id || row.status === "PAGO") return;
 
-    const ehParcelaArrendamento = Boolean(row.ehArrendamentoPendente || row.lucroId);
-
-    setMarcarPagoBusyId(rowKey);
+    setMarcarPagoBusyId(row.id);
     try {
-      if (ehParcelaArrendamento) {
-        await confirmarArrendamento.mutateAsync(row.lucroId ?? row.id);
-      } else {
-        await updateGasto.mutateAsync({ id: row.id, payload: { status: "PAGO" } });
-      }
+      await updateGasto.mutateAsync({ id: row.id, payload: { status: "PAGO" } });
     } catch {
       // Toast ja tratado via mutation props.
     } finally {

@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
     addPeriodoArrendamento,
     listarDatasRecebimentoAteHoje,
-} from '../../shared/fazenda/arrendamentoLucro.js'
+} from '../../shared/fazenda/arrendamentoEntrega.js'
 
-describe('arrendamentoLucro', () => {
+describe('arrendamentoEntrega', () => {
     it('lista recebimentos mensais ate a data limite', () => {
         const datas = listarDatasRecebimentoAteHoje({
             dataInicio: '2026-01-15',

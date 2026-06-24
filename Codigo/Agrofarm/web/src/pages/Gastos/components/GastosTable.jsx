@@ -54,11 +54,6 @@ function isGastoPendente(row) {
   return row.status !== "PAGO";
 }
 
-function isParcelaArrendamento(row) {
-  if (row.ehArrendamentoPendente || row.lucroId) return true;
-  return String(row.tipo ?? "").toUpperCase() === "ARRENDAMENTO";
-}
-
 export default function GastosTable({
   items,
   onEdit,
@@ -108,26 +103,17 @@ export default function GastosTable({
           </AgroDataTableEmpty>
         ) : (
           items.map((row) => {
-            const parcelaArrendamento = isParcelaArrendamento(row);
-            const isArrendamento = String(row.tipo ?? "").toUpperCase() === "ARRENDAMENTO";
             const pendente = isGastoPendente(row);
-            const rowKey = row.lucroId ?? row.id;
+            const rowKey = row.id;
             const busy = marcarPagoBusyId === rowKey;
 
             return (
-            <AgroDataTableRow
-              key={rowKey}
-              className={
-                (parcelaArrendamento || isArrendamento) && pendente
-                  ? "bg-amber-50/50 ring-1 ring-inset ring-amber-200/80"
-                  : ""
-              }
-            >
+            <AgroDataTableRow key={rowKey}>
               <AgroDataTableTd align="left" className="font-semibold text-gray-800">
                 {row.fazenda?.nome ?? "—"}
               </AgroDataTableTd>
               <AgroDataTableTd align="center" className="whitespace-normal break-words text-gray-600">
-                {parcelaArrendamento ? "Arrendamento" : getColheitaLabel(row)}
+                {getColheitaLabel(row)}
               </AgroDataTableTd>
               <AgroDataTableTd>
                 {row.tipo === "OUTRO" ? row.tipoPersonalizado ?? "Outro" : row.tipo}
@@ -152,27 +138,21 @@ export default function GastosTable({
                       disabled={busy}
                       onClick={() => onMarcarPago?.(row)}
                       className="inline-flex h-8 items-center rounded-lg border border-green-200 bg-green-50 px-2.5 text-xs font-semibold text-green-800 transition-colors hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-40"
-                      title={
-                        parcelaArrendamento
-                          ? "Confirmar recebimento e registrar em Lucros"
-                          : "Marcar gasto como pago"
-                      }
+                      title="Marcar gasto como pago"
                     >
                       {busy ? "…" : "Marcar como pago"}
                     </button>
                   ) : null}
-                  {!parcelaArrendamento ? (
-                    <AgroDataTableActions>
-                      <AgroDataTableEditButton
-                        label={`Editar gasto ${row.id}`}
-                        onClick={() => onEdit(row)}
-                      />
-                      <AgroDataTableDeleteButton
-                        label={`Excluir gasto ${row.id}`}
-                        onClick={() => onDelete(row)}
-                      />
-                    </AgroDataTableActions>
-                  ) : null}
+                  <AgroDataTableActions>
+                    <AgroDataTableEditButton
+                      label={`Editar gasto ${row.id}`}
+                      onClick={() => onEdit(row)}
+                    />
+                    <AgroDataTableDeleteButton
+                      label={`Excluir gasto ${row.id}`}
+                      onClick={() => onDelete(row)}
+                    />
+                  </AgroDataTableActions>
                 </div>
               </AgroDataTableTd>
             </AgroDataTableRow>

@@ -72,7 +72,11 @@ export function SimulacaoHistoricoModal({ onClose, fazendaId, onRestaurar }) {
 													onClick={() => setSelecionada(sim)}
 												>
 													<div className="flex flex-wrap items-center gap-2">
-														<p className="font-semibold text-gray-900">{sim.cultura}</p>
+														<p className="font-semibold text-gray-900">
+															{sim.composicaoTaxas?.cenarioMultiplo
+																? `${sim.composicaoTaxas.linhas?.length ?? 0} vendas no cenário`
+																: sim.cultura}
+														</p>
 														<span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
 															{sim.moeda === "BRL" || sim.composicaoTaxas?.isExportacao === false
 																? "Mercado interno"

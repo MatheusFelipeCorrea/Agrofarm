@@ -23,6 +23,7 @@ function buildWhereBase({ filters, role, fazendasPermitidas }) {
       : {}),
     colheitas: {
       ...(filters?.fazendaId ? { fazenda_id: filters.fazendaId } : {}),
+      ...(filters?.fazendaIds?.length ? { fazenda_id: { in: filters.fazendaIds } } : {}),
       ...(filters?.culturaId ? { cultura_id: filters.culturaId } : {}),
       ...(role !== "ADMIN" ? { fazenda_id: { in: fazendasPermitidas } } : {}),
     },

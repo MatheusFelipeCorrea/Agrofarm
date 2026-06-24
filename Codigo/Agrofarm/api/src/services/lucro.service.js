@@ -1,10 +1,8 @@
 import { AppError } from '../shared/errors/AppError.js'
 import { assertFazendaOperavelPorColheitaId } from '../shared/fazenda/fazendaOperacao.js'
-import { sincronizarLucrosArrendamento } from '../shared/fazenda/arrendamentoLucro.js'
-import { prisma } from '../database/client.js'
 import { calcularSaldoColheita, assertVendaSacasPermitida } from '../shared/estoque/saldoSacas.js'
 import { lucroRepository } from '../repositories/lucro.repository.js'
-import { notificacaoService } from './notificacao.service.js'
+import { prisma } from '../database/client.js'
 
 async function getFazendaIdsPermitidas(usuarioId) {
     const registros = await prisma.usuarios_fazendas.findMany({
@@ -54,36 +52,8 @@ async function validarSaldoSacas({ colheitaId, quantidadeSacas, lucroIdIgnorar }
     })
 }
 
-async function sincronizarArrendamentosAutomaticos() {
-    const fazendas = await prisma.fazendas.findMany({
-        where: {
-            tipo: 'ARRENDADA_PARA_TERCEIROS',
-            arrendamento_valor: { not: null },
-            arrendamento_periodicidade: { not: null },
-            arrendamento_data_inicio: { not: null },
-        },
-        select: { id: true },
-    })
-
-    await Promise.all(fazendas.map((f) => sincronizarLucrosArrendamento(f.id)))
-}
-
-function assertLucroEditavelManual(lucro) {
-    if (lucro?.origem === 'ARRENDAMENTO') {
-        throw new AppError(
-            'Receitas de arrendamento são geradas ao salvar a fazenda. Edite o contrato na tela de fazendas.',
-            403,
-        )
-    }
-}
-
 export const lucroService = {
     listar: async ({ usuarioId, role, query }) => {
-        await sincronizarArrendamentosAutomaticos()
-        if (role === 'ADMIN') {
-            await notificacaoService.sincronizarNotificacoesArrendamento()
-        }
-
         let fazendaIdsPermitidas = []
 
         if (role === 'FUNCIONARIO') {
@@ -109,8 +79,6 @@ export const lucroService = {
     },
 
     buscarTotal: async ({ usuarioId, role, query }) => {
-        await sincronizarArrendamentosAutomaticos()
-
         let fazendaIdsPermitidas = []
 
         if (role === 'FUNCIONARIO') {
@@ -190,8 +158,6 @@ export const lucroService = {
             throw new AppError('Lucro não encontrado', 404)
         }
 
-        assertLucroEditavelManual(lucroExistente)
-
         const colheitaIdOperacao = payload.colheitaId ?? lucroExistente.colheita_id
         await assertFazendaOperavelPorColheitaId(colheitaIdOperacao)
 
@@ -254,8 +220,6 @@ export const lucroService = {
             throw new AppError('Lucro não encontrado', 404)
         }
 
-        assertLucroEditavelManual(lucro)
-
         if (lucro.colheita_id) {
             await assertFazendaOperavelPorColheitaId(lucro.colheita_id)
         }
@@ -269,28 +233,5 @@ export const lucroService = {
         }
 
         await lucroRepository.delete(id)
-    },
-
-    marcarRecebimentoArrendamento: async ({ role, id, status }) => {
-        if (role !== 'ADMIN') {
-            throw new AppError('Apenas ADMIN pode confirmar recebimento de arrendamento', 403)
-        }
-
-        const lucro = await lucroRepository.buscarPorId(id)
-        if (!lucro) {
-            throw new AppError('Registro não encontrado', 404)
-        }
-
-        if (lucro.origem !== 'ARRENDAMENTO') {
-            throw new AppError('Este registro não é uma parcela de arrendamento', 400)
-        }
-
-        const atualizado = await lucroRepository.update(id, {
-            status_recebimento: status,
-        })
-
-        await notificacaoService.resolverNotificacaoArrendamento(id)
-
-        return atualizado
     },
 }

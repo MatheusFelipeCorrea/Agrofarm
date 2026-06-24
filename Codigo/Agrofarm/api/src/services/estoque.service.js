@@ -1,6 +1,10 @@
 import { AppError } from '../shared/errors/AppError.js'
 import { estoqueRepository } from '../repositories/estoque.repository.js'
 import { usuarioRepository } from '../repositories/usuario.repository.js'
+import { sincronizarEntregasArrendamentoAutomaticos } from '../shared/fazenda/arrendamentoEntrega.js'
+import { calcularSaldoColheita, assertVendaSacasPermitida } from '../shared/estoque/saldoSacas.js'
+import { notificacaoService } from './notificacao.service.js'
+import { prisma } from '../database/client.js'
 
 /** Percentual mínimo do produzido para considerar "Em estoque" (abaixo disso = estoque baixo). */
 const ESTOQUE_BAIXO_LIMITE = 0.15
@@ -110,15 +114,33 @@ function montarMovimentacoes(colheita) {
         })
     })
 
+    ;(colheita.entregas_arrendamento ?? []).forEach((entrega) => {
+        const qtd = Number(entrega.quantidade_sacas ?? 0)
+        const fazendaNome = entrega.fazendas?.nome ?? 'fazenda arrendada'
+        movimentos.push({
+            id: entrega.id,
+            tipo: 'ARRENDAMENTO',
+            quantidadeSacas: qtd,
+            data: entrega.data,
+            dataHora: formatarDataHora(entrega.criado_em ?? entrega.data),
+            descricao: `Arrendamento — ${fazendaNome}`,
+        })
+    })
+
     return movimentos.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
 }
 
 function montarLoteRow(colheita, codigoLote) {
     const produzidas = Number(colheita.sacas_produzidas ?? 0)
-    const vendidas = (colheita.lucros ?? []).reduce(
+    const vendidasLucros = (colheita.lucros ?? []).reduce(
         (acc, l) => acc + Number(l.quantidade_sacas ?? 0),
         0,
     )
+    const vendidasArrendamento = (colheita.entregas_arrendamento ?? []).reduce(
+        (acc, e) => acc + Number(e.quantidade_sacas ?? 0),
+        0,
+    )
+    const vendidas = vendidasLucros + vendidasArrendamento
     const emEstoque = Math.max(produzidas - vendidas, 0)
     const movimentacoes = montarMovimentacoes(colheita)
     const ultima = movimentacoes[0] ?? null
@@ -126,6 +148,8 @@ function montarLoteRow(colheita, codigoLote) {
     let ultimaDescricao = ultima?.descricao ?? '—'
     if (ultima?.tipo === 'VENDA') {
         ultimaDescricao = `Venda - ${Number(ultima.quantidadeSacas).toLocaleString('pt-BR')} sacas`
+    } else if (ultima?.tipo === 'ARRENDAMENTO') {
+        ultimaDescricao = `Arrendamento - ${Number(ultima.quantidadeSacas).toLocaleString('pt-BR')} sacas`
     } else if (ultima?.tipo === 'ENTRADA_INICIAL') {
         ultimaDescricao = `Entrada inicial - ${Number(ultima.quantidadeSacas).toLocaleString('pt-BR')} sacas`
     }
@@ -190,7 +214,7 @@ function calcularResumo(rows) {
 function extrairMovimentacoesRecentes(rows, limite = 6) {
     const todas = rows.flatMap((row) =>
         (row.movimentacoes ?? [])
-            .filter((m) => m.tipo === 'VENDA')
+            .filter((m) => m.tipo === 'VENDA' || m.tipo === 'ARRENDAMENTO')
             .map((m) => ({
                 ...m,
                 lote: row.lote,
@@ -238,6 +262,11 @@ async function buildRows({ filtros, role, fazendasPermitidas }) {
 
 export const estoqueService = {
     listar: async ({ usuarioId, role, query }) => {
+        await sincronizarEntregasArrendamentoAutomaticos()
+        if (role === 'ADMIN') {
+            await notificacaoService.sincronizarNotificacoesArrendamento()
+        }
+
         const fazendasPermitidas = await resolveFazendasPermitidas({ usuarioId, role })
         const filtros = normalizeFiltros({ query, role })
         const page = query.page ?? 1
@@ -247,6 +276,16 @@ export const estoqueService = {
         const resumo = calcularResumo(rows)
         const movimentacoesRecentes = extrairMovimentacoesRecentes(rows)
 
+        const arrendamentosPendentes =
+            role === 'ADMIN'
+                ? await estoqueRepository.buscarEntregasPendentes({
+                      fazendaId: filtros.fazendaId,
+                      culturaId: filtros.culturaId,
+                      page: 1,
+                      pageSize: 100,
+                  })
+                : { items: [], meta: { totalItems: 0 } }
+
         const totalItems = rows.length
         const skip = (page - 1) * pageSize
         const items = rows.slice(skip, skip + pageSize)
@@ -255,6 +294,7 @@ export const estoqueService = {
             items,
             resumo,
             movimentacoesRecentes,
+            arrendamentosPendentes: arrendamentosPendentes.items,
             meta: {
                 page,
                 pageSize,
@@ -296,5 +336,104 @@ export const estoqueService = {
         const detalhe = montarLoteRow(colheita, codigos.get(colheita.id) ?? `LOTE-${colheita.ano}`)
 
         return detalhe
+    },
+
+    listarArrendamentosPendentes: async ({ role, query }) => {
+        if (role !== 'ADMIN') {
+            throw new AppError('Apenas ADMIN pode consultar entregas de arrendamento', 403)
+        }
+
+        await sincronizarEntregasArrendamentoAutomaticos()
+        await notificacaoService.sincronizarNotificacoesArrendamento()
+
+        return estoqueRepository.buscarEntregasPendentes({
+            fazendaId: query.fazendaId,
+            culturaId: query.culturaId,
+            page: query.page ?? 1,
+            pageSize: query.pageSize ?? 50,
+        })
+    },
+
+    confirmarEntregaArrendamento: async ({ role, entregaId, colheitaId }) => {
+        if (role !== 'ADMIN') {
+            throw new AppError('Apenas ADMIN pode confirmar entrega de arrendamento', 403)
+        }
+
+        const entrega = await estoqueRepository.buscarEntregaPorId(entregaId)
+        if (!entrega) {
+            throw new AppError('Entrega de arrendamento não encontrada', 404)
+        }
+        if (entrega.status !== 'PENDENTE') {
+            throw new AppError('Esta entrega já foi processada', 400)
+        }
+
+        const colheita = await prisma.colheitas.findUnique({
+            where: { id: colheitaId },
+            select: {
+                id: true,
+                cultura_id: true,
+                fazenda_id: true,
+                culturas: { select: { nome: true } },
+                fazendas: { select: { tipo: true } },
+            },
+        })
+
+        if (!colheita) {
+            throw new AppError('Colheita/lote não encontrado', 404)
+        }
+
+        if (colheita.cultura_id !== entrega.cultura_id) {
+            throw new AppError(
+                'A colheita selecionada não corresponde à cultura do arrendamento',
+                400,
+            )
+        }
+
+        const saldo = await calcularSaldoColheita(colheitaId)
+        assertVendaSacasPermitida({
+            quantidadeSacas: Number(entrega.quantidade_sacas),
+            totalProduzido: saldo.totalProduzido,
+            saldoDisponivel: saldo.saldoDisponivel,
+            culturaNome: colheita.culturas?.nome,
+        })
+
+        const atualizada = await estoqueRepository.atualizarEntrega(entregaId, {
+            status: 'ENTREGUE',
+            colheita_id: colheitaId,
+        })
+
+        await notificacaoService.resolverNotificacaoArrendamento(entregaId)
+
+        return atualizada
+    },
+
+    marcarEntregaArrendamento: async ({ role, entregaId, status }) => {
+        if (role !== 'ADMIN') {
+            throw new AppError('Apenas ADMIN pode alterar entrega de arrendamento', 403)
+        }
+
+        if (!['NAO_ENTREGUE', 'PENDENTE'].includes(status)) {
+            throw new AppError('Status inválido para esta operação', 400)
+        }
+
+        const entrega = await estoqueRepository.buscarEntregaPorId(entregaId)
+        if (!entrega) {
+            throw new AppError('Entrega de arrendamento não encontrada', 404)
+        }
+
+        if (entrega.status === 'ENTREGUE') {
+            throw new AppError('Entrega já confirmada no estoque e não pode ser alterada', 400)
+        }
+
+        const atualizada = await estoqueRepository.atualizarEntrega(entregaId, {
+            status,
+            colheita_id: null,
+        })
+
+        if (status === 'NAO_ENTREGUE') {
+            await notificacaoService.resolverNotificacaoArrendamento(entregaId)
+        }
+
+        return atualizada
     },
 }

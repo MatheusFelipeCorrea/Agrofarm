@@ -17,7 +17,7 @@ import {
 
 const senhaSchema = z
   .object({
-    senha: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
+    senha: z.string().min(8, "A senha deve ter no mínimo 8 caracteres"),
     confirmSenha: z.string().min(1, "Confirme a senha"),
   })
   .refine((d) => d.senha === d.confirmSenha, {
@@ -78,7 +78,7 @@ export default function RedefinirSenha() {
               id="nova-senha"
               type="password"
               autoComplete="new-password"
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Mínimo 8 caracteres"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
             />

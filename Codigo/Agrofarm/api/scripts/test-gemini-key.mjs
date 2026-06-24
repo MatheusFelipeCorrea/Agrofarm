@@ -21,9 +21,8 @@ function diag(raw) {
     tamanho: k.length,
     prefixo: k.slice(0, 4) || null,
     sufixo: k.length >= 4 ? k.slice(-4) : null,
-    pareceGoogle: k.startsWith("AIza") || k.startsWith("AQ."),
-    tamanhoEsperadoGoogle: (k.startsWith("AIza") && k.length >= 35 && k.length <= 45)
-      || (k.startsWith("AQ.") && k.length >= 40 && k.length <= 80),
+    pareceGoogle: k.startsWith("AIza"),
+    tamanhoEsperadoGoogle: k.length >= 35 && k.length <= 45,
     temEspacoNoValorBruto: /\s/.test(String(raw ?? "")),
   };
 }

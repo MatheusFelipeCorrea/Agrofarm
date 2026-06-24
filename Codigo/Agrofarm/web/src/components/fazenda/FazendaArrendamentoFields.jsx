@@ -12,7 +12,8 @@ const PERIODICIDADE_OPTIONS = [
 
 export function emptyArrendamentoForm() {
   return {
-    arrendamentoValor: "",
+    arrendamentoCulturaId: "",
+    arrendamentoQuantidadeSacas: "",
     arrendamentoPeriodicidade: "MENSAL",
     arrendamentoDataInicio: new Date().toISOString().slice(0, 10),
   };
@@ -23,25 +24,30 @@ export function mapArrendamentoFromFazenda(fazenda) {
     return emptyArrendamentoForm();
   }
   return {
-    arrendamentoValor: String(fazenda.arrendamento.valor ?? ""),
+    arrendamentoCulturaId: fazenda.arrendamento.culturaId ?? "",
+    arrendamentoQuantidadeSacas: String(fazenda.arrendamento.quantidadeSacas ?? ""),
     arrendamentoPeriodicidade: fazenda.arrendamento.periodicidade ?? "MENSAL",
     arrendamentoDataInicio: fazenda.arrendamento.dataInicio ?? new Date().toISOString().slice(0, 10),
   };
 }
 
 export function buildArrendamentoPayload(form) {
-  const valor = Number(String(form.arrendamentoValor ?? "").replace(",", "."));
+  const quantidade = Number(String(form.arrendamentoQuantidadeSacas ?? "").replace(",", "."));
   return {
-    arrendamentoValor: valor,
+    arrendamentoCulturaId: form.arrendamentoCulturaId,
+    arrendamentoQuantidadeSacas: quantidade,
     arrendamentoPeriodicidade: form.arrendamentoPeriodicidade,
     arrendamentoDataInicio: form.arrendamentoDataInicio,
   };
 }
 
 export function validateArrendamentoForm(form) {
-  const valor = Number(String(form.arrendamentoValor ?? "").replace(",", "."));
-  if (!Number.isFinite(valor) || valor <= 0) {
-    return "Informe o valor recebido no arrendamento.";
+  if (!form.arrendamentoCulturaId) {
+    return "Selecione a cultura recebida no arrendamento.";
+  }
+  const quantidade = Number(String(form.arrendamentoQuantidadeSacas ?? "").replace(",", "."));
+  if (!Number.isFinite(quantidade) || quantidade <= 0) {
+    return "Informe a quantidade de sacas recebidas por período.";
   }
   if (!form.arrendamentoPeriodicidade) {
     return "Selecione a periodicidade do recebimento.";
@@ -52,34 +58,56 @@ export function validateArrendamentoForm(form) {
   return null;
 }
 
-export default function FazendaArrendamentoFields({ form, setForm, onFieldChange }) {
+export default function FazendaArrendamentoFields({ form, setForm, culturas = [], onFieldChange }) {
   const touch = () => {
     if (typeof onFieldChange === "function") onFieldChange();
   };
 
   return (
     <div className="col-span-full mt-1 rounded-xl border border-sky-200/80 bg-sky-50/50 p-4">
-      <p className="text-sm font-semibold text-sky-900">Receita de arrendamento</p>
+      <p className="text-sm font-semibold text-sky-900">Entrega de arrendamento</p>
       <p className="mt-1 text-xs leading-relaxed text-sky-800/90">
-        Fazenda alugada para terceiros: informe quanto você recebe e com que frequência. Os recebimentos
-        aparecem automaticamente na tela de Lucros, vinculados a esta fazenda.
+        Fazenda alugada para terceiros: informe quantas sacas de qual cultura você recebe e com que
+        frequência. As entregas aparecem na tela de Estoque para baixa das sacas do inventário.
       </p>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="agro-user-form-dialog__field sm:col-span-2">
-          <label className="agro-user-form-dialog__label" htmlFor="arrendamento-valor">
-            Valor recebido (R$)
+        <div className="agro-user-form-dialog__field">
+          <label className="agro-user-form-dialog__label" htmlFor="arrendamento-cultura">
+            Cultura recebida
+          </label>
+          <Select
+            id="arrendamento-cultura"
+            className={FIELD_SELECT}
+            value={form.arrendamentoCulturaId}
+            onChange={(e) => {
+              touch();
+              setForm((p) => ({ ...p, arrendamentoCulturaId: e.target.value }));
+            }}
+          >
+            <option value="">Selecione a cultura</option>
+            {culturas.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div className="agro-user-form-dialog__field">
+          <label className="agro-user-form-dialog__label" htmlFor="arrendamento-quantidade">
+            Quantidade de sacas por período
           </label>
           <input
-            id="arrendamento-valor"
+            id="arrendamento-quantidade"
             type="text"
             inputMode="decimal"
-            placeholder="Ex.: 15000"
-            value={form.arrendamentoValor}
+            placeholder="Ex.: 500"
+            value={form.arrendamentoQuantidadeSacas}
             onChange={(e) => {
               touch();
               const v = e.target.value.replace(/[^\d.,]/g, "");
-              setForm((p) => ({ ...p, arrendamentoValor: v }));
+              setForm((p) => ({ ...p, arrendamentoQuantidadeSacas: v }));
             }}
             className={`usuario-form-modal-input ${FIELD_INPUT}`}
           />

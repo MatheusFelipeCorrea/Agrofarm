@@ -7,6 +7,8 @@ export function isAuthPublicPath(pathname) {
   );
 }
 
+const ALWAYS_ALLOWED_AUTHENTICATED_PATHS = ["/alterar-senha"];
+
 export function collectAllowedPaths(menu) {
   const paths = [];
 
@@ -27,6 +29,10 @@ export function collectAllowedPaths(menu) {
 
 export function isPathAllowed(pathname, menu) {
   const normalized = pathname.replace(/\/+$/, "") || "/";
+
+  if (ALWAYS_ALLOWED_AUTHENTICATED_PATHS.includes(normalized)) {
+    return true;
+  }
   const allowed = collectAllowedPaths(menu);
 
   if (allowed.length === 0) {

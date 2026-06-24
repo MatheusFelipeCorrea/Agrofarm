@@ -13,9 +13,10 @@ const periodicidadeArrendamentoSchema = z.enum(['MENSAL', 'SEMESTRAL', 'ANUAL'],
 })
 
 const camposArrendamentoSchema = {
-    arrendamentoValor: z
+    arrendamentoCulturaId: z.string().uuid('Cultura do arrendamento inválida').optional(),
+    arrendamentoQuantidadeSacas: z
         .number()
-        .positive('Valor do arrendamento deve ser positivo')
+        .positive('Quantidade de sacas deve ser positiva')
         .optional(),
     arrendamentoPeriodicidade: periodicidadeArrendamentoSchema.optional(),
     arrendamentoDataInicio: z
@@ -27,16 +28,24 @@ const camposArrendamentoSchema = {
 function validarArrendamentoPorTipo(data, ctx) {
     const isArrendadaParaTerceiros = data.tipo === 'ARRENDADA_PARA_TERCEIROS'
     const temAlgumCampo =
-        data.arrendamentoValor !== undefined ||
+        data.arrendamentoCulturaId !== undefined ||
+        data.arrendamentoQuantidadeSacas !== undefined ||
         data.arrendamentoPeriodicidade !== undefined ||
         data.arrendamentoDataInicio !== undefined
 
     if (isArrendadaParaTerceiros) {
-        if (data.arrendamentoValor === undefined || data.arrendamentoValor <= 0) {
+        if (!data.arrendamentoCulturaId) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: 'Informe o valor recebido no arrendamento',
-                path: ['arrendamentoValor'],
+                message: 'Informe a cultura recebida no arrendamento',
+                path: ['arrendamentoCulturaId'],
+            })
+        }
+        if (data.arrendamentoQuantidadeSacas === undefined || data.arrendamentoQuantidadeSacas <= 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Informe a quantidade de sacas recebidas por período',
+                path: ['arrendamentoQuantidadeSacas'],
             })
         }
         if (!data.arrendamentoPeriodicidade) {
@@ -60,7 +69,7 @@ function validarArrendamentoPorTipo(data, ctx) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: 'Campos de arrendamento só se aplicam a fazendas arrendadas para terceiros',
-            path: ['arrendamentoValor'],
+            path: ['arrendamentoCulturaId'],
         })
     }
 }
@@ -68,7 +77,6 @@ function validarArrendamentoPorTipo(data, ctx) {
 const latitudeSchema = z.number().min(-90).max(90).nullable().optional()
 const longitudeSchema = z.number().min(-180).max(180).nullable().optional()
 
-// Bounding box aproximado do território brasileiro (com pequena folga).
 const BRASIL_LAT_MIN = -34
 const BRASIL_LAT_MAX = 6
 const BRASIL_LNG_MIN = -74
@@ -119,7 +127,8 @@ export const updateFazendaSchema = z
         if (data.tipo !== undefined) {
             validarArrendamentoPorTipo(data, ctx)
         } else if (
-            data.arrendamentoValor !== undefined ||
+            data.arrendamentoCulturaId !== undefined ||
+            data.arrendamentoQuantidadeSacas !== undefined ||
             data.arrendamentoPeriodicidade !== undefined ||
             data.arrendamentoDataInicio !== undefined
         ) {
